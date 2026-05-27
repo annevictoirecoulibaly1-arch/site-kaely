@@ -1,0 +1,659 @@
+{% extends 'base.html' %}
+{% block title %}Rejoindre la Communauté — The SafePlace by K{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ════ PAGE WRAPPER ════ */
+  .reg-page {
+    min-height: 100vh;
+    background: linear-gradient(145deg, #00150f 0%, #00261b 45%, #0b3d2e 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem 5rem;
+  }
+
+  /* Atmospheric glows */
+  .reg-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    animation: glowDrift 12s ease-in-out infinite;
+  }
+  .reg-glow-1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(159,247,0,0.12) 0%, transparent 70%);
+    top: -120px; right: -80px;
+  }
+  .reg-glow-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(20,80,61,0.5) 0%, transparent 70%);
+    bottom: -100px; left: -60px;
+    animation-delay: 4s;
+  }
+  @keyframes glowDrift {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%      { transform: translate(-20px,15px) scale(1.08); }
+  }
+
+  /* Floating crosses */
+  .reg-cross {
+    position: absolute;
+    font-family: 'Material Symbols Outlined';
+    font-variation-settings: 'FILL' 0, 'wght' 200;
+    color: rgba(159,247,0,0.06);
+    pointer-events: none;
+    user-select: none;
+    animation: floatY 8s ease-in-out infinite;
+  }
+  @keyframes floatY {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-18px) rotate(4deg); }
+  }
+
+  /* ════ CARD ════ */
+  .reg-card {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 920px;
+    display: grid;
+    grid-template-columns: 1fr;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+  }
+  @media (min-width: 768px) {
+    .reg-card { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── Left panel (dark) ── */
+  .reg-left {
+    background: linear-gradient(160deg, #00261b 0%, #0b3d2e 60%, #1a5c42 100%);
+    padding: 3rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .reg-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .reg-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .reg-logo-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: rgba(159,247,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(159,247,0,0.2);
+  }
+  .reg-logo-text {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+  }
+  .reg-logo-text span { color: #9ff700; }
+
+  .reg-left-body { position: relative; z-index: 1; flex: 1; padding: 2.5rem 0 2rem; }
+  .reg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(159,247,0,0.15);
+    color: #9ff700;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid rgba(159,247,0,0.25);
+    margin-bottom: 1.25rem;
+  }
+  .reg-badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #9ff700;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .reg-left-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+  .reg-left-title span { color: #9ff700; }
+  .reg-left-desc {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  /* Perks list */
+  .reg-perks { display: flex; flex-direction: column; gap: 12px; }
+  .reg-perk {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .reg-perk-icon {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: rgba(159,247,0,0.12);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .reg-perk-icon span { font-size: 17px; color: #9ff700; }
+  .reg-perk-text strong { display: block; color: #fff; font-size: 0.875rem; font-weight: 600; }
+  .reg-perk-text small { color: rgba(255,255,255,0.5); font-size: 0.78rem; }
+
+  /* Testimonial */
+  .reg-testimonial {
+    margin-top: 2rem;
+    padding: 16px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+    z-index: 1;
+  }
+  .reg-testimonial p { color: rgba(255,255,255,0.75); font-size: 0.82rem; line-height: 1.6; font-style: italic; }
+  .reg-testimonial .reg-tes-author {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  }
+  .reg-tes-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9ff700, #416900);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #00261b;
+  }
+  .reg-tes-name { color: rgba(255,255,255,0.6); font-size: 0.78rem; font-weight: 600; }
+
+  /* ── Right panel (form) ── */
+  .reg-right {
+    background: #fff;
+    padding: 3rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .reg-form-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #00261b;
+    margin-bottom: 0.4rem;
+  }
+  .reg-form-subtitle { color: #5a7060; font-size: 0.9rem; margin-bottom: 2rem; }
+
+  /* Form fields */
+  .reg-field { margin-bottom: 1rem; }
+  .reg-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #00261b;
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+  .reg-label .req { color: #9ff700; }
+  .reg-input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid rgba(0,38,27,0.15);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: #00261b;
+    background: #f9fbf7;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .reg-input:focus {
+    border-color: #9ff700;
+    box-shadow: 0 0 0 4px rgba(159,247,0,0.12);
+    background: #fff;
+  }
+  .reg-input.error { border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,0.08); }
+
+  .reg-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .reg-field-row { grid-template-columns: 1fr; } }
+
+  /* Checkboxes */
+  .reg-checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
+  .reg-check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(0,38,27,0.1);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .reg-check-item:hover { border-color: #9ff700; background: rgba(159,247,0,0.04); }
+  .reg-check-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #416900; cursor: pointer; }
+  .reg-check-item label { cursor: pointer; font-size: 0.875rem; color: #1a2214; font-weight: 500; }
+  .reg-check-item .msi { font-size: 18px; color: #416900; margin-left: auto; }
+
+  /* Submit btn */
+  .reg-submit {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #9ff700, #7bc400);
+    color: #00261b;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
+    box-shadow: 0 6px 24px rgba(159,247,0,0.4);
+    margin-bottom: 1rem;
+  }
+  .reg-submit:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 10px 32px rgba(159,247,0,0.55); }
+  .reg-submit:active { transform: scale(0.98); }
+  .reg-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Security note */
+  .reg-secure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #5a7060;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .reg-secure span { font-size: 14px; color: #416900; }
+
+  /* ── Success / Error states ── */
+  .reg-message {
+    display: none;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    align-items: center;
+    gap: 10px;
+  }
+  .reg-message.show { display: flex; }
+  .reg-message.success {
+    background: rgba(159,247,0,0.12);
+    border: 1px solid rgba(159,247,0,0.3);
+    color: #2d5a00;
+  }
+  .reg-message.error {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+    color: #b91c1c;
+  }
+
+  /* ── Loading spinner ── */
+  .reg-spinner {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,38,27,0.2);
+    border-top-color: #00261b;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .reg-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 1.25rem 0;
+    color: #8fa894;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .reg-divider::before, .reg-divider::after {
+    content: ''; flex: 1; height: 1px; background: rgba(0,38,27,0.1);
+  }
+
+  /* Donate link removed (Stripe donations disabled) */
+
+  /* ── Responsive tweaks ── */
+  @media (max-width: 767px) {
+    .reg-left { padding: 2rem 1.5rem; }
+    .reg-right { padding: 2rem 1.5rem; }
+    .reg-card { border-radius: 20px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reg-page">
+
+  <!-- Atmospheric -->
+  <div class="reg-glow reg-glow-1"></div>
+  <div class="reg-glow reg-glow-2"></div>
+  <span class="reg-cross" style="font-size:90px;top:5%;left:5%;animation-delay:0s">church</span>
+  <span class="reg-cross" style="font-size:50px;bottom:10%;right:8%;animation-delay:2.5s">church</span>
+  <span class="reg-cross" style="font-size:35px;top:35%;right:3%;animation-delay:1.2s">church</span>
+
+  <div class="reg-card">
+
+    <!-- ════ LEFT PANEL ════ -->
+    <div class="reg-left">
+      <!-- Logo -->
+      <div class="reg-logo">
+        <div class="reg-logo-icon">
+          <span class="material-symbols-outlined" style="color:#9ff700;font-size:22px">church</span>
+        </div>
+        <span class="reg-logo-text">The SafePlace <span>by K</span></span>
+      </div>
+
+      <!-- Body -->
+      <div class="reg-left-body">
+        <div class="reg-badge">
+          <span class="reg-badge-dot"></span>
+          Inscription fermée
+        </div>
+        <h1 class="reg-left-title">
+          Inscription<br>publique<br><span>fermée</span>
+        </h1>
+        <p class="reg-left-desc">
+          L'inscription publique est actuellement désactivée. Contactez-nous pour plus d'informations.
+        </p>
+
+        <div class="reg-perks">
+          <div class="reg-perk">
+            <div class="reg-perk-icon">
+              <span class="material-symbols-outlined">notifications</span>
+            </div>
+            <div class="reg-perk-text">
+              <strong>Alertes en temps réel</strong>
+              <small>Soyez le premier à être notifié</small>
+            </div>
+          </div>
+          <div class="reg-perk">
+            <div class="reg-perk-icon">
+              <span class="material-symbols-outlined">headphones</span>
+            </div>
+            <div class="reg-perk-text">
+              <strong>Accès à tous les podcasts</strong>
+              <small>Prédications, témoignages, louange</small>
+            </div>
+          </div>
+          <div class="reg-perk">
+            <div class="reg-perk-icon">
+              <span class="material-symbols-outlined">sensors</span>
+            </div>
+            <div class="reg-perk-text">
+              <strong>Lives exclusifs</strong>
+              <small>Ne manquez aucune émission</small>
+            </div>
+          </div>
+          <div class="reg-perk">
+            <div class="reg-perk-icon">
+              <span class="material-symbols-outlined">lock</span>
+            </div>
+            <div class="reg-perk-text">
+              <strong>100% Gratuit & Sécurisé</strong>
+              <small>Désabonnez-vous à tout moment</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+     
+    </div>
+
+    <!-- ════ RIGHT PANEL (FORM) ════ -->
+    <div class="reg-right">
+      <h2 class="reg-form-title">Inscription fermée</h2>
+      <p class="reg-form-subtitle">L'inscription publique n'est plus disponible.</p>
+
+      <!-- Messages -->
+      {% if error_message %}
+      <div class="reg-message error show" id="reg-error">
+        <span class="material-symbols-outlined" style="font-size:22px">error</span>
+        <span id="reg-error-text">{{ error_message }}</span>
+      </div>
+      {% else %}
+      <div class="reg-message error" id="reg-error">
+        <span class="material-symbols-outlined" style="font-size:22px">error</span>
+        <span id="reg-error-text">Une erreur est survenue.</span>
+      </div>
+      {% endif %}
+      {% if success_message %}
+      <div class="reg-message success show" id="reg-success">
+        <span class="material-symbols-outlined" style="font-size:22px;color:#416900">check_circle</span>
+        <span id="reg-success-text">{{ success_message }}</span>
+      </div>
+      {% else %}
+      <div class="reg-message success" id="reg-success">
+        <span class="material-symbols-outlined" style="font-size:22px;color:#416900">check_circle</span>
+        <span id="reg-success-text">Bienvenue dans la communauté ! Vérifiez votre email.</span>
+      </div>
+      {% endif %}
+
+      <!-- Form -->
+      <form id="reg-form" method="post" action="" novalidate>
+        {% csrf_token %}
+
+        <!-- Prénom / Nom -->
+        <div class="reg-field-row">
+          <div class="reg-field">
+            <label class="reg-label" for="reg-fname">Prénom <span class="req">*</span></label>
+            <input class="reg-input" type="text" id="reg-fname" name="first_name" placeholder="Jean" required autocomplete="given-name" value="{{ form_data.first_name|default_if_none:'' }}">
+          </div>
+          <div class="reg-field">
+            <label class="reg-label" for="reg-lname">Nom</label>
+            <input class="reg-input" type="text" id="reg-lname" name="last_name" placeholder="Dupont" autocomplete="family-name" value="{{ form_data.last_name|default_if_none:'' }}">
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="reg-field">
+          <label class="reg-label" for="reg-email">Adresse e-mail <span class="req">*</span></label>
+          <input class="reg-input" type="email" id="reg-email" name="email" placeholder="jean@exemple.com" required autocomplete="email" value="{{ form_data.email|default_if_none:'' }}">
+        </div>
+
+        <!-- Photo de profil -->
+        <div class="reg-field">
+          <label class="reg-label" for="reg-photo-url">Photo de profil (URL)</label>
+          <input class="reg-input" type="url" id="reg-photo-url" name="photo_url" placeholder="https://..." autocomplete="photo" value="{{ form_data.photo_url|default_if_none:'' }}">
+          <small style="color:#5a7060;font-size:0.82rem;">Optionnel : affichée comme avatar dans le menu si vous vous inscrivez.</small>
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="reg-field">
+          <label class="reg-label" for="reg-password">Mot de passe <span class="req">*</span></label>
+          <input class="reg-input" type="password" id="reg-password" name="password" placeholder="Au moins 8 caractères" required autocomplete="new-password">
+        </div>
+
+        <div class="reg-field">
+          <label class="reg-label" for="reg-password-confirm">Confirmez le mot de passe <span class="req">*</span></label>
+          <input class="reg-input" type="password" id="reg-password-confirm" name="password_confirm" placeholder="Retapez le mot de passe" required autocomplete="new-password">
+        </div>
+
+        <!-- Préférences notifications -->
+        <div class="reg-field">
+          <label class="reg-label" style="margin-bottom:10px">Je souhaite être notifié pour :</label>
+          <div class="reg-checks">
+            <div class="reg-check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="notif-podcast" name="notify_podcasts" checked>
+              <label for="notif-podcast">Nouveaux Podcasts</label>
+              <span class="material-symbols-outlined msi">headphones</span>
+            </div>
+            <div class="reg-check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="notif-live" name="notify_live" checked>
+              <label for="notif-live">Émissions Live</label>
+              <span class="material-symbols-outlined msi">sensors</span>
+            </div>
+            <div class="reg-check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="notif-video" name="notify_videos">
+              <label for="notif-video">Nouvelles Vidéos</label>
+              <span class="material-symbols-outlined msi">smart_display</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="reg-submit" id="reg-submit-btn">
+          <div class="reg-spinner" id="reg-spinner"></div>
+          <span class="material-symbols-outlined" id="reg-btn-icon" style="font-variation-settings:'FILL' 1">favorite</span>
+          <span id="reg-btn-text">Nous contacter</span>
+        </button>
+
+        <div class="reg-secure">
+          <span class="material-symbols-outlined">lock</span>
+          Données protégées · Désabonnement en 1 clic
+        </div>
+      </form>
+
+      
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleCheck(item) {
+  var cb = item.querySelector('input[type="checkbox"]');
+  if (cb) cb.checked = !cb.checked;
+}
+
+function getCookie(name) {
+  var value = "; " + document.cookie;
+  var parts = value.split('; ' + name + '=');
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
+
+document.getElementById('reg-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var form = this;
+  var fname = document.getElementById('reg-fname').value.trim();
+  var email = document.getElementById('reg-email').value.trim();
+  var password = document.getElementById('reg-password').value;
+  var passwordConfirm = document.getElementById('reg-password-confirm').value;
+  var errEl = document.getElementById('reg-error');
+  var errTxt = document.getElementById('reg-error-text');
+  var sucEl = document.getElementById('reg-success');
+
+  // Reset
+  errEl.classList.remove('show');
+  sucEl.classList.remove('show');
+  document.querySelectorAll('.reg-input').forEach(function(i) { i.classList.remove('error'); });
+
+  // Validate
+  var valid = true;
+  if (!fname) {
+    document.getElementById('reg-fname').classList.add('error');
+    valid = false;
+  }
+  if (!email || !email.includes('@')) {
+    document.getElementById('reg-email').classList.add('error');
+    valid = false;
+  }
+  if (!password || password.length < 8) {
+    document.getElementById('reg-password').classList.add('error');
+    valid = false;
+  }
+  if (password !== passwordConfirm) {
+    document.getElementById('reg-password-confirm').classList.add('error');
+    valid = false;
+  }
+  if (!valid) {
+    errTxt.textContent = 'Veuillez remplir correctement tous les champs requis.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  // Loading state
+  var btn = document.getElementById('reg-submit-btn');
+  var spinner = document.getElementById('reg-spinner');
+  var btnIcon = document.getElementById('reg-btn-icon');
+  var btnText = document.getElementById('reg-btn-text');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnIcon.style.display = 'none';
+  btnText.textContent = 'Envoi en cours…';
+
+  var payload = {
+    first_name: fname,
+    last_name: document.getElementById('reg-lname').value.trim(),
+    email: email,
+    password: password,
+    password_confirm: passwordConfirm,
+    photo_url: document.getElementById('reg-photo-url').value.trim(),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken'),
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnIcon.style.display = '';
+
+    if (data.success) {
+      btnText.textContent = 'Inscrit(e) !';
+      btnIcon.textContent = 'check';
+      btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+      document.getElementById('reg-success-text').textContent = data.message || 'Bienvenue ! Votre compte est créé.';
+      sucEl.classList.add('show');
+      form.reset();
+      document.getElementById('notif-podcast').checked = true;
+      document.getElementById('notif-live').checked = true;
+      document.getElementById('notif-video').checked = false;
+    } else {
+      btnText.textContent = 'Rejoindre gratuitement';
+      btnIcon.textContent = 'favorite';
+      errTxt.textContent = data.error || 'Une erreur est survenue. Veuillez réessayer.';
+      errEl.classList.add('show');
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnIcon.style.display = '';
+    btnText.textContent = 'Rejoindre gratuitement';
+    errTxt.textContent = 'Connexion impossible. Vérifiez votre réseau.';
+    errEl.classList.add('show');
+  });
+});
+</script>
+{% endblock %}

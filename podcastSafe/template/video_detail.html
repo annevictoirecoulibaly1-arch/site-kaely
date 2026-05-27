@@ -1,0 +1,754 @@
+{% extends 'base.html' %}
+{% block title %}{{ episode.title }} — The SafePlace by K{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1rem 2rem;
+  }
+  @media (min-width: 1024px) {
+    .detail-grid { grid-template-columns: minmax(0, 1fr) 360px; padding: 2rem 2.5rem 2rem; }
+  }
+
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 16px 42px rgba(0,0,0,.18);
+  }
+  .video-wrapper iframe,
+  .video-wrapper video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: contain;
+  }
+
+  /* ── CUSTOM PLAYER CONTROLS ── */
+  .vp-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 16px 42px rgba(0,0,0,.18);
+    cursor: pointer;
+  }
+  .vp-wrap video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: contain;
+  }
+  .vp-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0);
+    transition: background .2s;
+    pointer-events: none;
+  }
+  .vp-wrap:not(.vp-playing) .vp-overlay { background: rgba(0,0,0,.3); pointer-events: auto; }
+  .vp-big-play {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(159,247,0,.9);
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform .15s, opacity .2s;
+    pointer-events: auto;
+  }
+  .vp-big-play:hover { transform: scale(1.12); }
+  .vp-wrap.vp-playing .vp-big-play { opacity: 0; pointer-events: none; }
+  .vp-big-play svg { width: 32px; height: 32px; fill: #00261b; margin-left: 4px; }
+
+  /* Controls bar */
+  .vp-controls {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 0 14px 10px;
+    background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity .25s;
+    pointer-events: none;
+  }
+  .vp-wrap:hover .vp-controls,
+  .vp-wrap:not(.vp-playing) .vp-controls { opacity: 1; pointer-events: auto; }
+
+  /* Seek bar */
+  .vp-seek {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,.25);
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: height .15s;
+  }
+  .vp-seek:hover { height: 6px; }
+  .vp-seek-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: #9ff700;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  .vp-seek-thumb {
+    position: absolute;
+    top: 50%; transform: translate(-50%, -50%);
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #9ff700;
+    box-shadow: 0 0 8px rgba(159,247,0,.7);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .vp-seek:hover .vp-seek-thumb { opacity: 1; }
+
+  /* Bottom row */
+  .vp-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .vp-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 4px; border-radius: 6px; color: #fff;
+    display: flex; align-items: center;
+    transition: color .15s, transform .1s;
+  }
+  .vp-btn:hover { color: #9ff700; transform: scale(1.12); }
+  .vp-btn svg { width: 22px; height: 22px; }
+  .vp-time {
+    font-size: .8rem; color: rgba(255,255,255,.8);
+    font-family: 'Courier New', monospace; letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .vp-spacer { flex: 1; }
+
+  /* Volume */
+  .vp-vol-wrap { display: flex; align-items: center; gap: 6px; }
+  .vp-vol-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 58px; height: 4px;
+    background: rgba(255,255,255,.25);
+    border-radius: 4px; cursor: pointer;
+    transition: width .15s;
+    outline: none;
+  }
+  .vp-vol-wrap:hover .vp-vol-slider { width: 76px; }
+  .vp-vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%; background: #9ff700;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(159,247,0,.6);
+  }
+  .vp-vol-slider::-moz-range-thumb {
+    width: 13px; height: 13px;
+    border-radius: 50%; background: #9ff700; border: none; cursor: pointer;
+  }
+  .vp-vol-slider::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 4px;
+    background: linear-gradient(to right, #9ff700 var(--vol, 100%), rgba(255,255,255,.25) var(--vol, 100%));
+  }
+  .vp-vol-slider::-moz-range-track {
+    height: 4px; border-radius: 4px; background: rgba(255,255,255,.25);
+  }
+  .vp-vol-slider::-moz-range-progress { background: #9ff700; height: 4px; border-radius: 4px; }
+
+  /* Fullscreen mode */
+  .vp-wrap:-webkit-full-screen { border-radius: 0; aspect-ratio: unset; height: 100vh; }
+  .vp-wrap:-moz-full-screen    { border-radius: 0; aspect-ratio: unset; height: 100vh; }
+  .vp-wrap:fullscreen          { border-radius: 0; aspect-ratio: unset; height: 100vh; }
+
+  .video-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1rem;
+  }
+  .video-meta span,
+  .video-meta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.7rem 1rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .video-meta .tag {
+    background: rgba(159,247,0,.12);
+    color: #416900;
+  }
+  .video-meta .duration {
+    background: rgba(255,255,255,.08);
+    color: #f5f5f5;
+  }
+
+  .video-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  .video-actions a,
+  .video-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.95rem 1.2rem;
+    border-radius: 999px;
+    border: none;
+    text-decoration: none;
+    font-weight: 700;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .video-actions a:hover,
+  .video-actions button:hover { transform: translateY(-1px); }
+  .btn-primary { background: #9ff700; color: #00261b; }
+  .btn-secondary { background: rgba(255,255,255,.08); color: #fff; }
+
+  .detail-sidebar {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .sidebar-box {
+    border-radius: 24px;
+    background: #f8faf7;
+    padding: 1.5rem;
+  }
+  .sidebar-box h2 { font-size: 1rem; margin-bottom: 1rem; }
+  .similar-item {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 0.9rem;
+    border-radius: 18px;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s ease;
+  }
+  .similar-item:hover { box-shadow: 0 12px 28px rgba(0,0,0,.08); }
+  .similar-item .thumb {
+    flex-shrink: 0;
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #9ff700, #00261b);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 1.5rem;
+  }
+  .similar-item .info {
+    flex: 1;
+  }
+  .similar-item .info h3 { font-size: 0.95rem; margin: 0 0 0.25rem; }
+  .similar-item .info p { margin: 0; color: #6d7369; font-size: 0.92rem; line-height: 1.4; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── CUSTOM VIDEO PLAYER ── */
+(function() {
+  var wrap = document.getElementById('vp-wrap');
+  if (!wrap) return; // YouTube → skip
+
+  var vid      = document.getElementById('vp-vid');
+  var bigPlay  = document.getElementById('vp-big-play');
+  var playBtn  = document.getElementById('vp-play');
+  var playIcon = document.getElementById('vp-play-icon');
+  var muteBtn  = document.getElementById('vp-mute');
+  var volIcon  = document.getElementById('vp-vol-icon');
+  var volRange = document.getElementById('vp-vol-range');
+  var fsBtn    = document.getElementById('vp-fs');
+  var fsIcon   = document.getElementById('vp-fs-icon');
+  var seek     = document.getElementById('vp-seek');
+  var seekFill = document.getElementById('vp-seek-fill');
+  var seekThumb= document.getElementById('vp-seek-thumb');
+  var timeEl   = document.getElementById('vp-time');
+
+  var PLAY_PATH  = 'M8 5v14l11-7z';
+  var PAUSE_PATH = 'M6 19h4V5H6v14zm8-14v14h4V5h-4z';
+  var VOL_PATH   = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
+  var MUTE_PATH  = 'M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
+  var FS_ENTER  = 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z';
+  var FS_EXIT   = 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z';
+
+  function fmt(s) {
+    s = Math.floor(s || 0);
+    var m = Math.floor(s / 60), ss = s % 60;
+    return m + ':' + (ss < 10 ? '0' : '') + ss;
+  }
+
+  var noAudioEl   = document.getElementById('vp-no-audio');
+  var unmuteHint  = document.getElementById('vp-unmute-hint');
+  var unmuteBtn   = document.getElementById('vp-unmute-btn');
+
+  if (unmuteBtn) {
+    unmuteBtn.addEventListener('click', function() {
+      ensureAudioCtx();
+      vid.muted  = false;
+      vid.volume = 1;
+      applyVol();
+      unmuteHint.style.display = 'none';
+      if (vid.paused) doPlay();
+    });
+  }
+
+  function updatePlayIcon() {
+    playIcon.setAttribute('d', vid.paused ? PLAY_PATH : PAUSE_PATH);
+    wrap.classList.toggle('vp-playing', !vid.paused);
+  }
+
+  /* Web Audio API — déblocage AudioContext suspendu */
+  var _audioCtx = null;
+  function ensureAudioCtx() {
+    if (_audioCtx) { if (_audioCtx.state === 'suspended') _audioCtx.resume(); return; }
+    try {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var src = _audioCtx.createMediaElementSource(vid);
+      var gain = _audioCtx.createGain();
+      gain.gain.value = 1;
+      src.connect(gain);
+      gain.connect(_audioCtx.destination);
+      if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    } catch(e) { _audioCtx = null; }
+  }
+
+  function doPlay() {
+    ensureAudioCtx();
+    vid.volume = 1;
+    vid.muted  = false;
+    var p = vid.play();
+    if (p !== undefined) {
+      p.catch(function() {
+        vid.muted = true;
+        applyVol();
+        vid.play().then(function() {
+          setTimeout(function() { vid.muted = false; applyVol(); }, 80);
+        }).catch(function() {});
+      });
+    }
+  }
+  function togglePlay() {
+    if (vid.paused) doPlay(); else vid.pause();
+  }
+
+  bigPlay.addEventListener('click', togglePlay);
+  playBtn.addEventListener('click', togglePlay);
+  vid.addEventListener('click', togglePlay);
+  vid.addEventListener('play', updatePlayIcon);
+  vid.addEventListener('playing', function() {
+    if (vid.muted) { vid.muted = false; applyVol(); }
+    if (vid.volume === 0) { vid.volume = 1; applyVol(); }
+    updatePlayIcon();
+    /* Afficher le bouton "Activer le son" 1s après le play — disparaît si son OK */
+    if (unmuteHint) {
+      setTimeout(function() {
+        if (vid.muted || vid.volume === 0) {
+          unmuteHint.style.display = 'block';
+        }
+      }, 1000);
+    }
+  });
+  vid.addEventListener('pause', updatePlayIcon);
+  vid.addEventListener('ended', updatePlayIcon);
+
+  /* Seek bar */
+  vid.addEventListener('timeupdate', function() {
+    if (!vid.duration) return;
+    var pct = (vid.currentTime / vid.duration) * 100;
+    seekFill.style.width = pct + '%';
+    seekThumb.style.left = pct + '%';
+    timeEl.textContent = fmt(vid.currentTime) + ' / ' + fmt(vid.duration);
+  });
+
+  /* Métadonnées chargées → re-init volume + détection piste audio */
+  vid.addEventListener('loadedmetadata', function() {
+    timeEl.textContent = '0:00 / ' + fmt(vid.duration);
+    /* Forcer volume après chargement — le navigateur peut le reset */
+    vid.volume = 1;
+    vid.muted  = false;
+    applyVol();
+    /* Détecter absence de piste audio */
+    var tracks = vid.audioTracks;
+    if (tracks && tracks.length === 0 && noAudioEl) {
+      noAudioEl.style.display = 'flex';
+    }
+  });
+
+  /* Erreur de chargement */
+  vid.addEventListener('error', function() {
+    if (noAudioEl) {
+      noAudioEl.textContent = '⚠ Impossible de lire ce fichier vidéo.';
+      noAudioEl.style.display = 'flex';
+    }
+  });
+
+  /* Seek click & drag */
+  var seeking = false;
+  function applySeek(e) {
+    var rect = seek.getBoundingClientRect();
+    var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var pct = Math.max(0, Math.min(1, x / rect.width));
+    if (vid.duration) vid.currentTime = pct * vid.duration;
+  }
+  seek.addEventListener('mousedown', function(e) { seeking = true; applySeek(e); });
+  seek.addEventListener('touchstart', function(e) { seeking = true; applySeek(e); }, {passive: true});
+  document.addEventListener('mousemove', function(e) { if (seeking) applySeek(e); });
+  document.addEventListener('touchmove', function(e) { if (seeking) applySeek(e); }, {passive: true});
+  document.addEventListener('mouseup',  function() { seeking = false; });
+  document.addEventListener('touchend', function() { seeking = false; });
+
+  /* Volume */
+  vid.volume = 1;
+  vid.muted  = false;
+
+  function syncVolSlider() {
+    var level = vid.muted ? 0 : vid.volume;
+    volRange.value = level;
+    volRange.style.setProperty('--vol', (level * 100) + '%');
+    var pctEl = document.getElementById('vp-vol-pct');
+    if (pctEl) pctEl.textContent = Math.round(level * 100) + '%';
+  }
+  function updateVolIcon() {
+    volIcon.setAttribute('d', (vid.muted || vid.volume === 0) ? MUTE_PATH : VOL_PATH);
+  }
+  function applyVol() { syncVolSlider(); updateVolIcon(); }
+
+  volRange.addEventListener('input', function() {
+    vid.volume = parseFloat(this.value);
+    vid.muted  = vid.volume === 0;
+    applyVol();
+  });
+  muteBtn.addEventListener('click', function() {
+    if (vid.muted || vid.volume === 0) {
+      vid.muted  = false;
+      vid.volume = vid.volume === 0 ? 1 : vid.volume;
+    } else {
+      vid.muted = true;
+    }
+    applyVol();
+  });
+  vid.addEventListener('volumechange', applyVol);
+
+  applyVol();
+
+  /* Fullscreen */
+  fsBtn.addEventListener('click', function() {
+    if (!document.fullscreenElement) {
+      (wrap.requestFullscreen || wrap.webkitRequestFullscreen || wrap.mozRequestFullScreen).call(wrap);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
+    }
+  });
+  document.addEventListener('fullscreenchange', function() {
+    var isFs = !!document.fullscreenElement;
+    fsIcon.setAttribute('d', isFs ? FS_EXIT : FS_ENTER);
+    fsBtn.setAttribute('aria-label', isFs ? 'Quitter le plein écran' : 'Plein écran');
+  });
+
+  /* Keyboard shortcuts */
+  document.addEventListener('keydown', function(e) {
+    if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); vid.currentTime = Math.min(vid.duration, vid.currentTime + 5); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); vid.currentTime = Math.max(0, vid.currentTime - 5); }
+    if (e.key === 'ArrowUp')    { e.preventDefault(); vid.volume = Math.min(1, vid.volume + 0.1); volRange.value = vid.volume; updateVolIcon(); }
+    if (e.key === 'ArrowDown')  { e.preventDefault(); vid.volume = Math.max(0, vid.volume - 0.1); volRange.value = vid.volume; updateVolIcon(); }
+    if (e.key === 'f' || e.key === 'F') { fsBtn.click(); }
+    if (e.key === 'm' || e.key === 'M') { muteBtn.click(); }
+  });
+})();
+
+/* ── COMMENTS ── */
+(function() {
+  var form = document.getElementById('comment-form');
+  var textarea = document.getElementById('c-content');
+  var charsEl = document.getElementById('c-chars');
+  var errorEl = document.getElementById('comment-error');
+  var successEl = document.getElementById('comment-success');
+  var submitBtn = document.getElementById('comment-submit');
+  var commentsList = document.getElementById('comments-list');
+  var countBadge = document.getElementById('comment-count-badge');
+  var noMsg = document.getElementById('no-comments-msg');
+
+  if (textarea && charsEl) {
+    textarea.addEventListener('input', function() { charsEl.textContent = textarea.value.length; });
+  }
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    errorEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+
+    var name = document.getElementById('c-name').value.trim();
+    var content = textarea.value.trim();
+    if (!name || !content) {
+      errorEl.textContent = 'Le nom et le commentaire sont obligatoires.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="material-symbols-outlined text-[17px]">progress_activity</span> Envoi…';
+
+    var csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "episode_comment" episode.pk %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: new FormData(form),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        if (noMsg) noMsg.remove();
+        var c = data.comment;
+        var card = document.createElement('div');
+        card.className = 'bg-surface-container-low rounded-2xl p-5 flex gap-4';
+        card.innerHTML =
+          '<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-base shrink-0">' + c.author_name.charAt(0).toUpperCase() + '</div>' +
+          '<div class="flex-1 min-w-0">' +
+            '<div class="flex items-center gap-2 flex-wrap mb-1">' +
+              '<span class="font-bold text-primary text-sm">' + c.author_name + '</span>' +
+              '<span class="text-on-surface-variant text-xs">' + c.created_at + '</span>' +
+            '</div>' +
+            '<p class="text-on-surface text-sm leading-relaxed whitespace-pre-line">' + c.content.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>' +
+          '</div>';
+        commentsList.prepend(card);
+        if (countBadge) countBadge.textContent = parseInt(countBadge.textContent || '0') + 1;
+        form.reset();
+        charsEl.textContent = '0';
+        successEl.classList.remove('hidden');
+        setTimeout(function() { successEl.classList.add('hidden'); }, 4000);
+      } else {
+        errorEl.textContent = data.error || 'Une erreur est survenue.';
+        errorEl.classList.remove('hidden');
+      }
+    })
+    .catch(function() {
+      errorEl.textContent = 'Impossible de publier le commentaire. Vérifiez votre connexion.';
+      errorEl.classList.remove('hidden');
+    })
+    .finally(function() {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-[17px]" style="font-variation-settings:\'FILL\' 1">send</span> Publier le commentaire';
+    });
+  });
+})();
+</script>
+{% endblock %}
+
+{% block content %}
+<main class="detail-grid">
+  <section>
+    {% if youtube_embed_url %}
+    <div class="video-wrapper">
+      <iframe src="{{ youtube_embed_url }}"
+              title="{{ episode.title }}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen loading="lazy"></iframe>
+    </div>
+    {% elif episode.video_file or episode.video_url %}
+    <div class="vp-wrap" id="vp-wrap">
+      <video id="vp-vid" preload="metadata">
+        {% if episode.video_file %}
+        <source src="{{ episode.video_file.url }}" type="video/mp4">
+        <source src="{{ episode.video_file.url }}" type="video/webm">
+        {% else %}
+        <source src="{{ episode.video_url }}" type="video/mp4">
+        <source src="{{ episode.video_url }}" type="video/webm">
+        {% endif %}
+        <a href="{% if episode.video_file %}{{ episode.video_file.url }}{% else %}{{ episode.video_url }}{% endif %}" target="_blank" rel="noopener">Ouvrir la vidéo</a>
+      </video>
+
+      <!-- Badge "pas de piste audio" (caché par défaut) -->
+      <div id="vp-no-audio" style="display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(220,60,0,.9);color:#fff;padding:6px 14px;border-radius:999px;font-size:.78rem;font-weight:700;z-index:10;align-items:center;gap:6px;white-space:nowrap;">
+        ⚠ Pas de piste audio dans ce fichier
+      </div>
+
+      <!-- Bouton "Activer le son" — s'affiche après le premier play si son bloqué -->
+      <div id="vp-unmute-hint" style="display:none;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);z-index:15;">
+        <button id="vp-unmute-btn" style="background:#9ff700;color:#00261b;border:none;padding:10px 20px;border-radius:999px;font-weight:800;cursor:pointer;font-size:.85rem;box-shadow:0 4px 20px rgba(159,247,0,.4);white-space:nowrap;">
+          🔊 Activer le son
+        </button>
+      </div>
+
+      <!-- Big play overlay -->
+      <div class="vp-overlay">
+        <button class="vp-big-play" id="vp-big-play" aria-label="Lire">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+
+      <!-- Controls bar -->
+      <div class="vp-controls" id="vp-controls">
+        <!-- Seek bar -->
+        <div class="vp-seek" id="vp-seek">
+          <div class="vp-seek-fill" id="vp-seek-fill"></div>
+          <div class="vp-seek-thumb" id="vp-seek-thumb"></div>
+        </div>
+        <!-- Bottom row -->
+        <div class="vp-row">
+          <!-- Play / Pause -->
+          <button class="vp-btn" id="vp-play" aria-label="Lecture / Pause">
+            <svg viewBox="0 0 24 24"><path id="vp-play-icon" d="M8 5v14l11-7z"/></svg>
+          </button>
+          <!-- Time -->
+          <span class="vp-time" id="vp-time">0:00 / 0:00</span>
+          <span class="vp-spacer"></span>
+          <!-- Volume -->
+          <div class="vp-vol-wrap">
+            <button class="vp-btn" id="vp-mute" aria-label="Muet">
+              <svg viewBox="0 0 24 24"><path id="vp-vol-icon" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+            <input type="range" class="vp-vol-slider" id="vp-vol-range" min="0" max="1" step="0.02" value="1">
+            <span id="vp-vol-pct" style="font-size:.7rem;color:rgba(255,255,255,.6);min-width:28px;">100%</span>
+          </div>
+          <!-- Fullscreen -->
+          <button class="vp-btn" id="vp-fs" aria-label="Plein écran">
+            <svg viewBox="0 0 24 24"><path id="vp-fs-icon" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="video-wrapper">
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
+        <span class="material-symbols-outlined" style="font-size: 72px; opacity: 0.24;">smart_display</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-8">
+      <div class="video-meta">
+        <span class="tag">Vidéo</span>
+        {% if episode.category %}<span>{{ episode.category.name }}</span>{% endif %}
+        {% if episode.duration %}<span class="duration"><span class="material-symbols-outlined" style="font-size:16px;">schedule</span>{{ episode.duration }}</span>{% endif %}
+      </div>
+      <h1 class="text-3xl font-bold text-primary mt-5" style="font-family:'Montserrat',sans-serif">{{ episode.title }}</h1>
+      <p class="text-on-surface-variant mt-4 max-w-3xl">{{ episode.description }}</p>
+
+      <div class="video-actions">
+        {% if has_downloadable and not youtube_embed_url %}
+        <a href="{% url 'episode_download' episode.pk %}" class="btn-primary">Télécharger la vidéo</a>
+        {% endif %}
+        <a href="mailto:?subject={{ episode.title|urlencode }}&body=Regardez%20cette%20vid%C3%A9o%20:%20{{ request.build_absolute_uri }}" class="btn-secondary">Partager par mail</a>
+        <a href="https://wa.me/?text={{ episode.title|urlencode }}%20{{ request.build_absolute_uri }}" target="_blank" rel="noopener" class="btn-secondary">Partager sur WhatsApp</a>
+      </div>
+    </div>
+
+    <!-- ══════ COMMENTAIRES ══════ -->
+    <section class="mt-10 space-y-6" id="comments-section">
+      <h2 class="text-2xl font-bold text-primary border-l-4 pl-4" style="border-color:#9ff700;font-family:'Montserrat',sans-serif">
+        Commentaires
+        <span class="ml-2 bg-surface-container text-on-surface-variant text-sm font-semibold px-2.5 py-0.5 rounded-full align-middle" id="comment-count-badge">{{ comment_count }}</span>
+      </h2>
+
+      <!-- Liste -->
+      <div class="flex flex-col gap-4" id="comments-list">
+        {% for comment in comments %}
+        <div class="bg-surface-container-low rounded-2xl p-5 flex gap-4">
+          <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-base shrink-0">
+            {{ comment.author_name|first|upper }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <span class="font-bold text-primary text-sm">{{ comment.author_name }}</span>
+              <span class="text-on-surface-variant text-xs">{{ comment.created_at|date:"d F Y" }}</span>
+            </div>
+            <p class="text-on-surface text-sm leading-relaxed whitespace-pre-line">{{ comment.content }}</p>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-on-surface-variant text-sm text-center py-4" id="no-comments-msg">Soyez le premier à laisser un commentaire !</p>
+        {% endfor %}
+      </div>
+
+      <!-- Formulaire -->
+      <div class="bg-surface-container rounded-2xl p-6 space-y-4">
+        <h3 class="font-bold text-primary text-base">Laisser un commentaire</h3>
+        <div id="comment-error" class="hidden bg-error-container text-on-error-container text-sm px-4 py-3 rounded-xl"></div>
+        <div id="comment-success" class="hidden bg-secondary-container text-on-secondary-container text-sm px-4 py-3 rounded-xl font-semibold">
+          Votre commentaire a été publié !
+        </div>
+        <form id="comment-form" class="space-y-4" novalidate>
+          {% csrf_token %}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1.5" for="c-name">Nom <span class="text-error">*</span></label>
+              <input id="c-name" name="author_name" type="text" required maxlength="100"
+                     placeholder="Votre prénom"
+                     class="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1.5" for="c-email">Email <span class="text-on-surface-variant font-normal">(optionnel)</span></label>
+              <input id="c-email" name="author_email" type="email" maxlength="254"
+                     placeholder="votre@email.com"
+                     class="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-on-surface-variant mb-1.5" for="c-content">Commentaire <span class="text-error">*</span></label>
+            <textarea id="c-content" name="content" required maxlength="2000" rows="4"
+                      placeholder="Partagez votre réaction, votre témoignage..."
+                      class="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition resize-none"></textarea>
+            <p class="text-right text-xs text-on-surface-variant mt-1"><span id="c-chars">0</span>/2000</p>
+          </div>
+          <button type="submit" id="comment-submit"
+                  class="bg-secondary-container text-on-secondary-container font-bold px-6 py-3 rounded-full hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 text-sm">
+            <span class="material-symbols-outlined text-[17px]" style="font-variation-settings:'FILL' 1">send</span>
+            Publier le commentaire
+          </button>
+        </form>
+      </div>
+    </section>
+  </section>
+
+  <aside class="detail-sidebar">
+    <div class="sidebar-box">
+      <h2>À propos de cette vidéo</h2>
+      <p>{{ episode.description }}</p>
+    </div>
+
+    {% if similar_episodes %}
+    <div class="sidebar-box">
+      <h2>Vidéos similaires</h2>
+      {% for similar in similar_episodes %}
+      <a href="{% url 'video_detail' similar.pk %}" class="similar-item">
+        <div class="thumb"><span class="material-symbols-outlined">smart_display</span></div>
+        <div class="info">
+          <h3>{{ similar.title }}</h3>
+          <p>{{ similar.description|truncatechars:80 }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </aside>
+</main>
+{% endblock %}

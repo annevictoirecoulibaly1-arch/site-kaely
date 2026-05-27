@@ -1,0 +1,431 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="light" lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{% block title %}The SafePlace by K{% endblock %}</title>
+<meta name="description" content="{% block meta_description %}Votre refuge de foi et d'inspirations chrétiennes{% endblock %}"/>
+<link rel="stylesheet" href="{% static 'css/main.css' %}"/>
+<link rel="stylesheet" href="{% static 'css/3d.css' %}"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "on-primary": "#ffffff", "surface-dim": "#dadad8",
+        "secondary-container": "#9ff700", "surface-container-highest": "#e2e3e0",
+        "surface-container-high": "#e8e8e6", "secondary": "#416900",
+        "secondary-fixed": "#a1fb00", "secondary-fixed-dim": "#8ddc00",
+        "surface-container": "#eeeeec", "primary-fixed-dim": "#a0d1bc",
+        "surface-bright": "#f9f9f7", "inverse-primary": "#a0d1bc",
+        "outline-variant": "#c0c8c3", "on-error": "#ffffff",
+        "inverse-surface": "#2f3130", "on-primary-container": "#79a894",
+        "on-background": "#1a1c1b", "on-secondary-fixed": "#102000",
+        "primary-container": "#0b3d2e", "tertiary-container": "#333636",
+        "on-error-container": "#93000a", "primary": "#00261b",
+        "surface": "#f9f9f7", "primary-fixed": "#bcedd7",
+        "surface-container-low": "#f4f4f1", "surface-variant": "#e2e3e0",
+        "on-surface": "#1a1c1b", "on-secondary-container": "#446e00",
+        "inverse-on-surface": "#f1f1ef", "error": "#ba1a1a",
+        "outline": "#717974", "surface-tint": "#396756",
+        "on-secondary": "#ffffff", "error-container": "#ffdad6",
+        "on-surface-variant": "#414944", "on-tertiary": "#ffffff",
+        "surface-container-lowest": "#ffffff", "background": "#f9f9f7",
+        "tertiary": "#1d2121", "tertiary-fixed-dim": "#c4c7c6",
+        "on-primary-fixed": "#002116",
+      },
+      borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+      spacing: {
+        "margin-desktop": "40px", "margin-mobile": "16px",
+        "container-max-width": "1440px", "base": "8px",
+        "gutter": "24px", "margin-tablet": "24px", "section-gap": "64px"
+      },
+      fontFamily: {
+        "body-md": ["Inter"], "label-md": ["Inter"],
+        "headline-lg": ["Montserrat"], "headline-md": ["Montserrat"],
+        "display-lg": ["Montserrat"], "body-lg": ["Inter"],
+        "headline-lg-mobile": ["Montserrat"], "label-sm": ["Inter"]
+      },
+      fontSize: {
+        "body-md": ["16px", {"lineHeight":"24px","fontWeight":"400"}],
+        "label-md": ["14px", {"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"600"}],
+        "headline-lg": ["32px", {"lineHeight":"40px","fontWeight":"700"}],
+        "headline-md": ["24px", {"lineHeight":"32px","fontWeight":"600"}],
+        "display-lg": ["48px", {"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],
+        "body-lg": ["18px", {"lineHeight":"28px","fontWeight":"400"}],
+        "headline-lg-mobile": ["28px", {"lineHeight":"36px","fontWeight":"700"}],
+        "label-sm": ["12px", {"lineHeight":"16px","fontWeight":"500"}]
+      }
+    }
+  }
+}
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; display:inline-block; line-height:1; }
+  .glass-player { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); }
+  @keyframes livePulse { 0%{box-shadow:0 0 0 0px rgba(161,251,0,0.7)} 70%{box-shadow:0 0 0 10px rgba(161,251,0,0)} 100%{box-shadow:0 0 0 0px rgba(161,251,0,0)} }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.2)} }
+  .pulse-dot { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+  body { -webkit-font-smoothing: antialiased; }
+
+  /* Mobile Navigation Menu */
+  .sp-nav__mobile {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+  }
+  .sp-nav__mobile.open {
+    display: flex;
+  }
+  .sp-nav__mobile-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 320px;
+    background: #f9f9f7;
+    padding: 24px;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  .sp-nav__mobile-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 12px;
+    color: #1a1c1b;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-bottom: 8px;
+  }
+  .sp-nav__mobile-link:hover {
+    background: rgba(65,105,0,0.1);
+    color: #416900;
+  }
+  .sp-nav__mobile-link--active {
+    background: rgba(65,105,0,0.15);
+    color: #416900;
+    font-weight: 600;
+  }
+
+  /* Responsive Navigation Adjustments */
+  @media (max-width: 1024px) {
+    .glass-player {
+      padding: 12px 16px;
+    }
+    .glass-player .flex.items-center.gap-4 {
+      gap: 8px;
+    }
+    .glass-player > div:first-child {
+      width: auto;
+    }
+    .glass-player > div:nth-child(2) {
+      width: 100%;
+      max-width: none;
+    }
+    .glass-player > div:last-child {
+      display: none;
+    }
+    .glass-player #volume-bar {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .glass-player {
+      padding: 10px 12px;
+    }
+    .glass-player .flex.items-center.gap-6 {
+      gap: 12px;
+    }
+    .glass-player .text-label-sm {
+      font-size: 11px;
+    }
+    .glass-player .w-12.h-12 {
+      width: 40px;
+      height: 40px;
+    }
+    .glass-player .w-12.h-12.rounded-full {
+      width: 36px;
+      height: 36px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .glass-player {
+      padding: 8px 10px;
+    }
+    .glass-player .flex.items-center.gap-6 {
+      gap: 8px;
+    }
+    .glass-player .material-symbols-outlined {
+      font-size: 20px;
+    }
+    .glass-player .text-label-sm {
+      display: none;
+    }
+  }
+
+  /* Mobile mini-player (au-dessus de la bottom nav) */
+  #sp-mobile-player {
+    display: none;
+    position: fixed;
+    bottom: 56px;
+    left: 0;
+    right: 0;
+    z-index: 45;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(0,38,27,0.1);
+    padding: 10px 16px;
+    box-shadow: 0 -4px 20px rgba(11,61,46,0.12);
+    align-items: center;
+    gap: 12px;
+  }
+  #sp-mobile-player.sp-player-visible {
+    display: flex;
+  }
+  @media (min-width: 1024px) {
+    #sp-mobile-player { display: none !important; }
+  }
+  #sp-mobile-progress {
+    height: 3px;
+    background: rgba(0,38,27,0.1);
+    border-radius: 99px;
+    flex: 1;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  #sp-mobile-progress-fill {
+    height: 100%;
+    background: #9ff700;
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+</style>
+{% block extra_css %}{% endblock %}
+{% block head_extra %}{% endblock %}
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md pb-20 lg:pb-24">
+
+<!-- Navigation -->
+<header class="sticky top-0 z-50 bg-surface/80 backdrop-blur-md shadow-[0px_4px_20px_rgba(11,61,46,0.05)]">
+  <nav class="flex justify-between items-center px-4 md:px-margin-desktop py-4 max-w-container-max-width mx-auto w-full">
+    <div class="flex items-center gap-8">
+      <a href="{% url 'home' %}" class="flex items-center gap-2 shrink-0">
+        <span class="material-symbols-outlined text-2xl text-primary">church</span>
+        <span class="font-headline-md font-bold text-primary leading-tight text-lg md:text-2xl">The SafePlace <span class="text-secondary">by K</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-6">
+        <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Accueil</a>
+        <a href="{% url 'live' %}" class="{% if request.resolver_match.url_name == 'live' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Live</a>
+        <a href="{% url 'podcasts' %}" class="{% if request.resolver_match.url_name == 'podcasts' or request.resolver_match.url_name == 'podcast_detail' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Podcasts</a>
+        <a href="{% url 'videos' %}" class="{% if request.resolver_match.url_name == 'videos' or request.resolver_match.url_name == 'video_detail' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Vidéos</a>
+        <a href="{% url 'contact' %}" class="{% if request.resolver_match.url_name == 'contact' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Contact</a>
+        <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">À Propos</a>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden lg:flex items-center bg-surface-container px-4 py-2 rounded-full border border-outline-variant">
+        <span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+        <input class="bg-transparent border-none focus:ring-0 w-44 ml-2 outline-none text-sm" placeholder="Rechercher..." type="text"/>
+      </div>
+      {% if user.is_authenticated %}
+      <div class="flex items-center justify-center w-11 h-11 rounded-full overflow-hidden border border-outline-variant bg-surface-container">
+        {% if profile_photo_url %}
+        <img src="{{ profile_photo_url }}" alt="{{ user.first_name|default:user.username }}" class="w-full h-full object-cover" />
+        {% else %}
+        <span class="font-bold text-sm text-primary">
+          {% if user.first_name %}{{ user.first_name|first|upper }}{% if user.last_name %}{{ user.last_name|first|upper }}{% endif %}{% else %}{{ user.username|slice:":1"|upper }}{% endif %}
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
+      <!-- Mobile nav toggle -->
+      <button id="sp-nav-toggle" class="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-primary">menu</span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+{% block content %}{% endblock %}
+
+<!-- Mobile Menu Overlay -->
+<div id="sp-mobile-menu" class="sp-nav__mobile">
+  <div class="sp-nav__mobile-panel">
+    <div class="flex justify-between items-center mb-8">
+      <span class="font-headline-md font-bold text-primary">The SafePlace <span class="text-secondary">by K</span></span>
+      <button id="sp-mobile-close" class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+        <span class="material-symbols-outlined text-primary">close</span>
+      </button>
+    </div>
+    <a href="{% url 'home' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'home' %}sp-nav__mobile-link--active{% endif %}">
+      <span class="material-symbols-outlined">home</span>Accueil
+    </a>
+    <a href="{% url 'live' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'live' %}sp-nav__mobile-link--active{% endif %}">
+      <span class="material-symbols-outlined">sensors</span>Live
+    </a>
+    <a href="{% url 'podcasts' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'podcasts' or request.resolver_match.url_name == 'podcast_detail' %}sp-nav__mobile-link--active{% endif %}">
+      <span class="material-symbols-outlined">headphones</span>Podcasts
+    </a>
+    <a href="{% url 'videos' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'videos' or request.resolver_match.url_name == 'video_detail' %}sp-nav__mobile-link--active{% endif %}">
+      <span class="material-symbols-outlined">smart_display</span>Vidéos
+    </a>
+    <a href="{% url 'about' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'about' %}sp-nav__mobile-link--active{% endif %}">
+      <span class="material-symbols-outlined">church</span>À Propos
+    </a>
+    <a href="{% url 'contact' %}" class="sp-nav__mobile-link">
+      <span class="material-symbols-outlined">mail</span>Contact
+    </a>
+  </div>
+</div>
+
+<!-- Player Persistant (Desktop) -->
+<footer class="fixed bottom-0 left-0 w-full z-40 hidden lg:block" id="sp-player">
+  <div class="glass-player px-10 py-4 border-t border-white/20 shadow-[0px_-4px_20px_rgba(11,61,46,0.08)] flex items-center justify-between">
+    <div class="flex items-center gap-4 w-1/4">
+      <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl" style="background:linear-gradient(135deg,#00261b,#416900)" id="player-cover">
+        <span class="material-symbols-outlined">church</span>
+      </div>
+      <div class="min-w-0">
+        <h5 class="font-bold text-on-surface truncate text-sm" id="player-title">The SafePlace by K</h5>
+        <p class="text-label-sm text-on-surface-variant truncate" id="player-host">Votre refuge de foi</p>
+      </div>
+      <button class="text-on-surface-variant hover:text-secondary transition-colors"><span class="material-symbols-outlined">favorite</span></button>
+    </div>
+    <div class="flex flex-col items-center gap-2 w-2/4 max-w-xl">
+      <div class="flex items-center gap-6">
+        <button class="text-on-surface-variant hover:text-secondary"><span class="material-symbols-outlined">shuffle</span></button>
+        <button class="text-on-surface-variant hover:text-secondary" id="prev-btn"><span class="material-symbols-outlined">skip_previous</span></button>
+        <button class="bg-primary text-on-primary w-12 h-12 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all" id="play-pause-btn">
+          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1" id="play-icon">play_arrow</span>
+        </button>
+        <button class="text-on-surface-variant hover:text-secondary" id="next-btn"><span class="material-symbols-outlined">skip_next</span></button>
+        <button class="text-on-surface-variant hover:text-secondary"><span class="material-symbols-outlined">repeat</span></button>
+      </div>
+      <div class="w-full flex items-center gap-4">
+        <span class="text-label-sm text-on-surface-variant" id="current-time">0:00</span>
+        <div class="flex-1 h-1.5 bg-primary/10 rounded-full relative overflow-hidden cursor-pointer" id="progress-bar">
+          <div class="absolute left-0 top-0 h-full bg-secondary rounded-full" id="progress-fill" style="width:0%"></div>
+        </div>
+        <span class="text-label-sm text-on-surface-variant" id="total-time">0:00</span>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-6 w-1/4">
+      <button class="text-on-surface-variant hover:text-secondary"><span class="material-symbols-outlined">playlist_play</span></button>
+      <div class="flex items-center gap-2 w-32" id="volume-bar">
+        <span class="material-symbols-outlined text-on-surface-variant text-[20px]">volume_up</span>
+        <div class="flex-1 h-1 bg-primary/10 rounded-full"><div class="h-full w-3/4 bg-on-surface-variant rounded-full" id="volume-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Mobile Bottom Nav -->
+<nav class="fixed bottom-0 left-0 w-full grid grid-cols-4 items-center px-1 py-2 bg-surface/90 backdrop-blur-xl lg:hidden z-50 shadow-[0px_-4px_20px_rgba(11,61,46,0.08)] border-t border-surface-container-high">
+  <a href="{% url 'home' %}" class="flex flex-col items-center px-1 py-1.5 rounded-full transition-all active:scale-90 {% if request.resolver_match.url_name == 'home' %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant{% endif %}">
+    <span class="material-symbols-outlined text-[20px]">home</span><span class="font-label-sm text-[10px] leading-tight text-center">Accueil</span>
+  </a>
+  <a href="{% url 'live' %}" class="flex flex-col items-center px-1 py-1.5 rounded-full transition-all active:scale-90 {% if request.resolver_match.url_name == 'live' %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant{% endif %}">
+    <span class="material-symbols-outlined text-[20px]">sensors</span><span class="font-label-sm text-[10px] leading-tight text-center">Live</span>
+  </a>
+  <a href="{% url 'podcasts' %}" class="flex flex-col items-center px-1 py-1.5 rounded-full transition-all active:scale-90 {% if request.resolver_match.url_name == 'podcasts' or request.resolver_match.url_name == 'podcast_detail' %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant{% endif %}">
+    <span class="material-symbols-outlined text-[20px]">headphones</span><span class="font-label-sm text-[10px] leading-tight text-center">Podcasts</span>
+  </a>
+  <a href="{% url 'videos' %}" class="flex flex-col items-center px-1 py-1.5 rounded-full transition-all active:scale-90 {% if request.resolver_match.url_name == 'videos' or request.resolver_match.url_name == 'video_detail' %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant{% endif %}">
+    <span class="material-symbols-outlined text-[20px]">smart_display</span><span class="font-label-sm text-[10px] leading-tight text-center">Vidéos</span>
+  </a>
+</nav>
+
+<!-- Mini-player Mobile (au-dessus de la bottom nav) -->
+<div id="sp-mobile-player" role="region" aria-label="Lecteur audio">
+  <!-- Cover miniature -->
+  <div id="sp-mob-cover"
+       style="width:40px;height:40px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#00261b,#416900);display:flex;align-items:center;justify-content:center">
+    <span class="material-symbols-outlined text-white" style="font-size:18px">church</span>
+  </div>
+  <!-- Titre + barre progression -->
+  <div style="flex:1;min-width:0">
+    <p id="sp-mob-title" style="font-size:13px;font-weight:700;color:#00261b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">The SafePlace by K</p>
+    <div id="sp-mobile-progress" style="margin-top:4px">
+      <div id="sp-mobile-progress-fill"></div>
+    </div>
+  </div>
+  <!-- Play/Pause -->
+  <button id="sp-mob-play-btn"
+          style="width:40px;height:40px;border-radius:50%;background:#00261b;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.2s"
+          aria-label="Lecture / Pause">
+    <span id="sp-mob-play-icon" class="material-symbols-outlined text-white" style="font-size:22px;font-variation-settings:'FILL' 1">play_arrow</span>
+  </button>
+  <!-- Fermer -->
+  <button id="sp-mob-close-btn"
+          style="width:32px;height:32px;border-radius:50%;background:rgba(0,38,27,0.08);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0"
+          aria-label="Fermer le player">
+    <span class="material-symbols-outlined" style="font-size:18px;color:#00261b">close</span>
+  </button>
+</div>
+
+<audio id="sp-audio" preload="none"></audio>
+<script src="{% static 'js/main.js' %}"></script>
+<script src="{% static 'js/player.js' %}"></script>
+<script src="{% static 'js/3d-effects.js' %}"></script>
+<script>
+// Mobile Navigation Toggle
+(function() {
+  const navToggle = document.getElementById('sp-nav-toggle');
+  const mobileMenu = document.getElementById('sp-mobile-menu');
+  const mobileClose = document.getElementById('sp-mobile-close');
+  
+  if (navToggle && mobileMenu) {
+    navToggle.addEventListener('click', function() {
+      mobileMenu.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+  
+  if (mobileClose && mobileMenu) {
+    mobileClose.addEventListener('click', function() {
+      mobileMenu.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  }
+  
+  // Close menu when clicking outside
+  if (mobileMenu) {
+    mobileMenu.addEventListener('click', function(e) {
+      if (e.target === mobileMenu) {
+        mobileMenu.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+  
+  // Close menu on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('open')) {
+      mobileMenu.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,540 @@
+{% extends 'base.html' %}
+{% block title %}{{ episode.title }} — The SafePlace by K{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Responsive layout ── */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2rem 1rem 2rem;
+  }
+  @media (min-width: 1024px) {
+    .detail-grid {
+      grid-template-columns: minmax(0, 1fr) 380px;
+      padding: 2rem 2.5rem 2rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .detail-grid {
+      grid-template-columns: minmax(0, 1fr) 420px;
+      padding: 2rem 3rem 2rem;
+    }
+  }
+  @media (min-width: 1600px) {
+    .detail-grid {
+      max-width: 1440px;
+      padding: 2rem 4rem 2rem;
+    }
+  }
+
+  /* ── Video / embed wrapper aspect-ratio ── */
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 8px 32px rgba(0,38,27,0.18);
+  }
+  .video-wrapper iframe,
+  .video-wrapper video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* ── Native video controls ── */
+  .video-wrapper video {
+    object-fit: contain;
+    background: #000;
+  }
+
+  /* ── Sidebar sticky ── */
+  @media (min-width: 1024px) {
+    .detail-sidebar {
+      position: sticky;
+      top: 80px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+  }
+
+  /* ── Similar episode row ── */
+  .similar-row {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 14px;
+    transition: background 0.2s;
+    text-decoration: none;
+  }
+  .similar-row:hover { background: #eeeeec; }
+  .similar-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Action buttons ── */
+  .action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  /* ── Info bar ── */
+  .info-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 0;
+  }
+
+  .host-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  @media (min-width: 640px) {
+    .host-bar { flex-direction: row; align-items: center; justify-content: space-between; }
+  }
+
+  /* ── Share Panel ── */
+  .share-panel {
+    display: none; position: absolute; top: calc(100% + 8px); right: 0;
+    background: #fff; border-radius: 16px; padding: 14px;
+    box-shadow: 0 12px 40px rgba(0,38,27,0.2); z-index: 50; min-width: 220px;
+    animation: fadeIn 0.18s ease;
+  }
+  .share-panel.open { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .share-btn-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; text-decoration: none; color: #1a1c1b; font-size: 0.875rem; font-weight: 600; transition: background 0.15s; border: none; background: none; cursor: pointer; width: 100%; }
+  .share-btn-item:hover { background: #f4f4f1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-grid">
+
+  <!-- ══════ MAIN COLUMN ══════ -->
+  <div class="flex flex-col gap-6">
+
+    <!-- ── Video / Podcast Player ── -->
+    <div class="video-wrapper"{% if not youtube_embed_url and not episode.video_url %} data-cover-color="{{ episode.cover_color }}"{% endif %}>
+
+      {% if youtube_embed_url %}
+        <!-- YouTube embed -->
+        <iframe
+          src="{{ youtube_embed_url }}"
+          title="{{ episode.title }}"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          loading="lazy">
+        </iframe>
+
+      {% elif episode.video_url %}
+        <!-- Lecteur vidéo HTML5 natif (MP4, WebM, etc.) -->
+        <video
+          controls
+          preload="metadata"
+          id="episode-video"
+          poster="">
+          <source src="{{ episode.video_url }}" type="video/mp4">
+          <source src="{{ episode.video_url }}" type="video/webm">
+          Votre navigateur ne supporte pas la lecture vidéo.
+          <a href="{{ episode.video_url }}" target="_blank" rel="noopener">Ouvrir la vidéo</a>
+        </video>
+
+      {% else %}
+        <!-- Fallback placeholder audio/visuel -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center" data-cover-color="{{ episode.cover_color }}">
+          <span class="material-symbols-outlined text-white opacity-20"
+                style="font-size: 100px">
+            {% if episode.episode_type == 'video' %}smart_display{% else %}church{% endif %}
+          </span>
+        </div>
+
+        <!-- Overlay info + play button -->
+        <div class="absolute inset-0 flex flex-col justify-between p-5"
+             style="background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 55%,rgba(0,0,0,0.15) 100%)">
+          <div class="flex justify-between items-start">
+            <span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
+              {% if episode.episode_type == 'video' %}
+                <span class="material-symbols-outlined text-[13px]">smart_display</span> VIDÉO
+              {% else %}
+                <span class="material-symbols-outlined text-[13px]">headphones</span> PODCAST
+              {% endif %}
+            </span>
+            <div class="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-white text-xs flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">schedule</span>
+              {{ episode.duration|default:"—" }}
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            {% if episode.audio_url %}
+            <button type="button"
+                    class="text-white hover:scale-110 transition-transform js-play-btn"
+                    data-audio-url="{{ episode.audio_url }}"
+                    data-title="{{ episode.title }}"
+                    data-host="{{ episode.host }}"
+                    data-color="{{ episode.cover_color }}"
+                    aria-label="Écouter {{ episode.title }}">
+              <span class="material-symbols-outlined" style="font-size:52px;font-variation-settings:'FILL' 1">play_circle</span>
+            </button>
+            {% endif %}
+            <div class="flex gap-3 ml-auto">
+              <button type="button" class="js-share-btn text-white hover:text-secondary-fixed transition-colors" aria-label="Partager">
+                <span class="material-symbols-outlined" style="font-size:28px">share</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Host + Actions ── -->
+    <div class="host-bar p-1 gap-4">
+      <div class="flex gap-4 items-center">
+        <div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-lg shrink-0">K</div>
+        <div>
+          <h1 class="font-bold text-primary text-xl md:text-2xl leading-tight" style="font-family:'Montserrat',sans-serif">{{ episode.title }}</h1>
+          <p class="text-on-surface-variant font-medium flex items-center gap-1.5 mt-0.5 text-sm">
+            {{ episode.host|default:"The SafePlace by K" }}
+            <span class="material-symbols-outlined text-secondary text-[15px]" style="font-variation-settings:'FILL' 1">verified</span>
+          </p>
+        </div>
+      </div>
+      <div class="action-bar">
+        {% if episode.audio_url %}
+        <button type="button"
+                class="bg-secondary-container text-on-secondary-container font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-all flex items-center gap-2 text-sm js-play-btn active:scale-95"
+                data-audio-url="{{ episode.audio_url }}"
+                data-title="{{ episode.title }}"
+                data-host="{{ episode.host }}"
+                data-color="{{ episode.cover_color }}">
+          <span class="material-symbols-outlined text-[17px]" style="font-variation-settings:'FILL' 1">play_arrow</span>Écouter
+        </button>
+        {% endif %}
+        {% if episode.video_url and not youtube_embed_url %}
+        <a href="{% url 'episode_download' episode.pk %}"
+           class="bg-secondary-container text-on-secondary-container font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-all flex items-center gap-2 text-sm active:scale-95">
+          <span class="material-symbols-outlined text-[17px]">download</span>Télécharger
+        </a>
+        {% endif %}
+        <!-- Panneau Partager -->
+        <div style="position:relative">
+          <button id="detail-share-btn" type="button"
+                  class="bg-surface-container-high text-primary font-bold px-5 py-2.5 rounded-full hover:bg-surface-container-highest transition-colors flex items-center gap-2 text-sm active:scale-95">
+            <span class="material-symbols-outlined text-[17px]">share</span>Partager
+          </button>
+          <div class="share-panel" id="detail-share-panel">
+            <p class="text-xs text-on-surface-variant font-bold mb-2 px-1">Partager via</p>
+            <button class="share-btn-item js-copy-link" id="detail-copy-link">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#416900">link</span> Copier le lien
+            </button>
+            <a class="share-btn-item" id="detail-wa-link" href="#" target="_blank" rel="noopener">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#25D366">chat</span> WhatsApp
+            </a>
+            <a class="share-btn-item" id="detail-email-link" href="#">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#ea4335">mail</span> Email
+            </a>
+            {% if episode.video_url and not youtube_embed_url %}
+            <a class="share-btn-item" href="{% url 'episode_download' episode.pk %}" rel="noopener">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#00261b">download</span> Télécharger vidéo
+            </a>
+            {% elif episode.video_url %}
+            <a class="share-btn-item" href="{{ episode.video_url }}" target="_blank" rel="noopener">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#00261b">open_in_new</span> Ouvrir la vidéo
+            </a>
+            {% endif %}
+            {% if episode.audio_url %}
+            <a class="share-btn-item" href="{% url 'episode_download' episode.pk %}" rel="noopener">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#00261b">download</span> Télécharger audio
+            </a>
+            {% endif %}
+          </div>
+        </div>
+       
+      </div>
+    </div>
+
+    <!-- ── Description ── -->
+    <div class="space-y-4 p-2">
+      <h2 class="font-bold text-primary text-xl border-l-4 pl-4" style="border-color:#9ff700;font-family:'Montserrat',sans-serif">À propos de cet épisode</h2>
+      <p class="text-on-surface-variant text-base md:text-lg leading-relaxed">{{ episode.description }}</p>
+      <div class="info-bar">
+        <span class="text-xs text-on-surface-variant bg-surface-container px-3 py-1.5 rounded-full">{{ episode.category.name|default:"Général" }}</span>
+        <span class="text-xs text-on-surface-variant">Publié le {{ episode.created_at|date:"d F Y" }}</span>
+        <span class="text-xs text-on-surface-variant flex items-center gap-1">
+          <span class="material-symbols-outlined text-[13px]">visibility</span>
+          {{ episode.views_count }}{% if episode.episode_type == 'video' %} vues{% else %} écoutes{% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- ══════ COMMENTAIRES ══════ -->
+    <section class="space-y-6 p-2" id="comments-section">
+      <h2 class="font-bold text-primary text-xl border-l-4 pl-4" style="border-color:#9ff700;font-family:'Montserrat',sans-serif">
+        Commentaires
+        <span class="ml-2 bg-surface-container text-on-surface-variant text-sm font-semibold px-2.5 py-0.5 rounded-full" id="comment-count-badge">{{ comment_count }}</span>
+      </h2>
+
+      <!-- Liste des commentaires -->
+      <div class="flex flex-col gap-4" id="comments-list">
+        {% for comment in comments %}
+        <div class="bg-surface-container-low rounded-2xl p-5 flex gap-4">
+          <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-base shrink-0">
+            {{ comment.author_name|first|upper }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <span class="font-bold text-primary text-sm">{{ comment.author_name }}</span>
+              <span class="text-on-surface-variant text-xs">{{ comment.created_at|date:"d F Y" }}</span>
+            </div>
+            <p class="text-on-surface text-sm leading-relaxed whitespace-pre-line">{{ comment.content }}</p>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-on-surface-variant text-sm text-center py-4" id="no-comments-msg">Soyez le premier à laisser un commentaire !</p>
+        {% endfor %}
+      </div>
+
+      <!-- Formulaire -->
+      <div class="bg-surface-container rounded-2xl p-6 space-y-4">
+        <h3 class="font-bold text-primary text-base">Laisser un commentaire</h3>
+        <div id="comment-error" class="hidden bg-error-container text-on-error-container text-sm px-4 py-3 rounded-xl"></div>
+        <div id="comment-success" class="hidden bg-secondary-container text-on-secondary-container text-sm px-4 py-3 rounded-xl font-semibold">
+          Votre commentaire a été publié !
+        </div>
+        <form id="comment-form" class="space-y-4" novalidate>
+          {% csrf_token %}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1.5" for="c-name">Nom <span class="text-error">*</span></label>
+              <input id="c-name" name="author_name" type="text" required maxlength="100"
+                     placeholder="Votre prénom"
+                     class="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-surface-variant mb-1.5" for="c-email">Email <span class="text-on-surface-variant font-normal">(optionnel)</span></label>
+              <input id="c-email" name="author_email" type="email" maxlength="254"
+                     placeholder="votre@email.com"
+                     class="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-on-surface-variant mb-1.5" for="c-content">Commentaire <span class="text-error">*</span></label>
+            <textarea id="c-content" name="content" required maxlength="2000" rows="4"
+                      placeholder="Partagez votre réaction, votre témoignage..."
+                      class="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition resize-none"></textarea>
+            <p class="text-right text-xs text-on-surface-variant mt-1"><span id="c-chars">0</span>/2000</p>
+          </div>
+          <button type="submit" id="comment-submit"
+                  class="bg-secondary-container text-on-secondary-container font-bold px-6 py-3 rounded-full hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 text-sm">
+            <span class="material-symbols-outlined text-[17px]" style="font-variation-settings:'FILL' 1">send</span>
+            Publier le commentaire
+          </button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══════ SIDEBAR ══════ -->
+  <aside class="detail-sidebar flex flex-col gap-6">
+
+    <!-- ── Épisodes similaires ── -->
+    <div>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-primary text-lg" style="font-family:'Montserrat',sans-serif">
+          {% if episode.episode_type == 'video' %}Vidéos similaires{% else %}Épisodes similaires{% endif %}
+        </h3>
+        {% if episode.episode_type == 'video' %}
+        <a href="{% url 'videos' %}" class="text-xs text-secondary font-bold hover:underline">VOIR TOUT</a>
+        {% else %}
+        <a href="{% url 'podcasts' %}" class="text-xs text-secondary font-bold hover:underline">VOIR TOUT</a>
+        {% endif %}
+      </div>
+      <div class="flex flex-col gap-1">
+        {% for ep in similar_episodes %}
+        <a href="{% url 'podcast_detail' ep.pk %}" class="similar-row group">
+          <div class="similar-thumb" data-cover-color="{{ ep.cover_color }}">
+            <span class="material-symbols-outlined text-white text-2xl" style="font-variation-settings:'FILL' 1">
+              {% if ep.episode_type == 'video' %}smart_display{% else %}favorite{% endif %}
+            </span>
+            <div class="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1 py-0.5 rounded font-bold">{{ ep.duration|default:"—" }}</div>
+          </div>
+          <div class="flex flex-col justify-center min-w-0">
+            <h4 class="font-bold text-primary text-sm line-clamp-2 leading-snug">{{ ep.title }}</h4>
+            <p class="text-on-surface-variant text-xs mt-1">{{ ep.host|default:"The SafePlace by K" }}</p>
+          </div>
+        </a>
+        {% empty %}
+        <div class="text-center py-8">
+          <p class="text-on-surface-variant text-sm">Aucun contenu similaire</p>
+          <a href="{% if episode.episode_type == 'video' %}{% url 'videos' %}{% else %}{% url 'podcasts' %}{% endif %}"
+             class="text-secondary text-sm font-bold mt-2 block">Voir tout le catalogue →</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ── CTA Don ── -->
+    <div class="bg-primary rounded-3xl p-7 text-on-primary">
+      <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style="background:rgba(159,247,0,0.15)">
+        <span class="material-symbols-outlined text-2xl" style="color:#9ff700;font-variation-settings:'FILL' 1">volunteer_activism</span>
+      </div>
+    </div>
+
+  </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    var url = window.location.href;
+    var title = '{{ episode.title|escapejs }}';
+    var desc = '{{ episode.description|truncatechars:100|escapejs }}';
+
+    // Init share links
+    var waEl = document.getElementById('detail-wa-link');
+    var emailEl = document.getElementById('detail-email-link');
+    if (waEl) waEl.href = 'https://wa.me/?text=' + encodeURIComponent(title + ' ' + url);
+    if (emailEl) emailEl.href = 'mailto:?subject=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(desc + '\n\n' + url);
+
+    // Toggle share panel
+    var shareBtn = document.getElementById('detail-share-btn');
+    var sharePanel = document.getElementById('detail-share-panel');
+    if (shareBtn && sharePanel) {
+      shareBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        sharePanel.classList.toggle('open');
+      });
+    }
+    document.addEventListener('click', function() {
+      if (sharePanel) sharePanel.classList.remove('open');
+    });
+
+    // Copier le lien
+    var copyBtn = document.getElementById('detail-copy-link');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(url).then(function() {
+          var o = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;color:#416900">check</span> Lien copié !';
+          setTimeout(function() { copyBtn.innerHTML = o; }, 2000);
+        });
+        if (sharePanel) sharePanel.classList.remove('open');
+      });
+    }
+
+    // Apply gradient backgrounds from data attributes to avoid inline template CSS parsing issues.
+    document.querySelectorAll('[data-cover-color]').forEach(function(el) {
+      var color = el.dataset.coverColor || '#416900';
+      el.style.background = 'linear-gradient(135deg,' + color + ',#416900)';
+    });
+  })();
+</script>
+
+<script>
+(function() {
+  var form = document.getElementById('comment-form');
+  var textarea = document.getElementById('c-content');
+  var charsEl = document.getElementById('c-chars');
+  var errorEl = document.getElementById('comment-error');
+  var successEl = document.getElementById('comment-success');
+  var submitBtn = document.getElementById('comment-submit');
+  var commentsList = document.getElementById('comments-list');
+  var countBadge = document.getElementById('comment-count-badge');
+  var noMsg = document.getElementById('no-comments-msg');
+
+  if (textarea && charsEl) {
+    textarea.addEventListener('input', function() {
+      charsEl.textContent = textarea.value.length;
+    });
+  }
+
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    errorEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+
+    var name = document.getElementById('c-name').value.trim();
+    var content = textarea.value.trim();
+    if (!name || !content) {
+      errorEl.textContent = 'Le nom et le commentaire sont obligatoires.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="material-symbols-outlined text-[17px] animate-spin">progress_activity</span> Envoi…';
+
+    var csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+    var formData = new FormData(form);
+
+    fetch('{% url "episode_comment" episode.pk %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: formData,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        // Injecter le nouveau commentaire en haut de la liste
+        if (noMsg) noMsg.remove();
+        var c = data.comment;
+        var initial = c.author_name.charAt(0).toUpperCase();
+        var card = document.createElement('div');
+        card.className = 'bg-surface-container-low rounded-2xl p-5 flex gap-4';
+        card.innerHTML =
+          '<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-base shrink-0">' + initial + '</div>' +
+          '<div class="flex-1 min-w-0">' +
+            '<div class="flex items-center gap-2 flex-wrap mb-1">' +
+              '<span class="font-bold text-primary text-sm">' + c.author_name + '</span>' +
+              '<span class="text-on-surface-variant text-xs">' + c.created_at + '</span>' +
+            '</div>' +
+            '<p class="text-on-surface text-sm leading-relaxed whitespace-pre-line">' + c.content.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>' +
+          '</div>';
+        commentsList.prepend(card);
+        // Mise à jour du compteur
+        if (countBadge) countBadge.textContent = parseInt(countBadge.textContent || '0') + 1;
+        // Reset form
+        form.reset();
+        charsEl.textContent = '0';
+        successEl.classList.remove('hidden');
+        setTimeout(function() { successEl.classList.add('hidden'); }, 4000);
+      } else {
+        errorEl.textContent = data.error || 'Une erreur est survenue.';
+        errorEl.classList.remove('hidden');
+      }
+    })
+    .catch(function() {
+      errorEl.textContent = 'Impossible de publier le commentaire. Vérifiez votre connexion.';
+      errorEl.classList.remove('hidden');
+    })
+    .finally(function() {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-[17px]" style="font-variation-settings:\'FILL\' 1">send</span> Publier le commentaire';
+    });
+  });
+})();
+</script>
+{% endblock %}

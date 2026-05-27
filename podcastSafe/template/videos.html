@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+{% block title %}Vidéos — The SafePlace by K{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Category Tiles ── */
+.cat-section { margin-bottom: 2.5rem; }
+.cat-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.cat-section-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.1rem; font-weight: 900; color: #00261b;
+  letter-spacing: .01em;
+}
+.cat-nav-btns { display: flex; gap: 6px; }
+.cat-nav-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(0,38,27,.15);
+  background: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; color: #00261b;
+}
+.cat-nav-btn:hover { background: #00261b; color: #9ff700; border-color: #00261b; }
+
+.cat-scroll-wrap { position: relative; overflow: hidden; }
+.cat-row {
+  display: flex; gap: 14px;
+  overflow-x: auto; scroll-behavior: smooth;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.cat-row::-webkit-scrollbar { display: none; }
+
+.cat-tile {
+  flex: 0 0 220px; height: 120px;
+  border-radius: 16px; overflow: hidden;
+  position: relative; cursor: pointer;
+  text-decoration: none;
+  transition: transform .25s, box-shadow .25s;
+  display: flex; align-items: flex-end;
+}
+.cat-tile:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+.cat-tile.active { outline: 3px solid #9ff700; outline-offset: 2px; transform: translateY(-2px); }
+
+.cat-tile-icon {
+  position: absolute; right: 10px; top: 10px;
+  font-size: 50px; opacity: .15; color: #fff;
+  pointer-events: none; user-select: none;
+}
+.cat-tile-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.05) 65%);
+}
+.cat-tile-label {
+  position: relative; padding: 12px 14px;
+  font-weight: 800; font-size: .85rem; color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,.5);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.cat-tile-label .cat-count {
+  font-size: .65rem; font-weight: 600; opacity: .7;
+  display: flex; align-items: center; gap: 3px;
+}
+
+/* ── Filter pills ── */
+.filter-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; align-items: center;
+}
+.filter-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 16px; border-radius: 99px; font-size: .8rem; font-weight: 700;
+  border: 1.5px solid transparent; transition: all .2s; text-decoration: none;
+}
+.filter-pill-inactive { background: #f4f4f1; color: #416900; }
+.filter-pill-inactive:hover { background: #e8f5e0; border-color: #9ff700; }
+.filter-pill-active { background: #9ff700; color: #002210; border-color: #9ff700; }
+
+/* ── Video Modal ── */
+.vid-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 16px;
+}
+.vid-modal-overlay.open { display: flex; }
+.vid-modal-box {
+  background: #0a1a12; border-radius: 20px; overflow: hidden;
+  width: 100%; max-width: 900px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn { from { transform: scale(0.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.vid-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.vid-modal-title { color: #fff; font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+.vid-modal-close {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.1); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+  transition: background 0.2s;
+}
+.vid-modal-close:hover { background: rgba(255,255,255,0.2); }
+.vid-modal-player { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+.vid-modal-player iframe, .vid-modal-player video {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+}
+.vid-modal-footer {
+  padding: 14px 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── Share Panel ── */
+.share-panel {
+  display: none; position: absolute; bottom: calc(100% + 8px); right: 0;
+  background: #fff; border-radius: 16px; padding: 16px;
+  box-shadow: 0 12px 40px rgba(0,38,27,0.18); z-index: 20; min-width: 220px;
+  animation: fadeDown 0.2s ease;
+}
+.share-panel.open { display: block; }
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.share-btn-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: 10px; text-decoration: none; color: #1a1c1b; font-size: 0.875rem; font-weight: 600;
+  transition: background 0.15s; border: none; background: none; cursor: pointer; width: 100%;
+}
+.share-btn-item:hover { background: #f4f4f1; }
+
+/* ── Card ── */
+.vid-card-wrap { position: relative; }
+.vid-thumb {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  border-radius: 14px; overflow: hidden; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.vid-thumb .play-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 60%);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.vid-thumb:hover .play-overlay { background: linear-gradient(to top, rgba(0,0,0,.7) 0%, rgba(0,0,0,.2) 100%); }
+.play-fab-vid {
+  width: 56px; height: 56px; border-radius: 50%; background: rgba(159,247,0,0.92);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(159,247,0,0.5); transition: transform 0.2s;
+}
+.vid-thumb:hover .play-fab-vid { transform: scale(1.12); }
+
+.results-label {
+  font-size: .82rem; font-weight: 700; color: #416900;
+  margin-bottom: 1.25rem; display: flex; align-items: center; gap: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main style="max-width:1440px;margin:0 auto;padding:2.5rem 1rem 2rem">
+
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="font-bold text-primary text-3xl md:text-5xl mb-2" style="font-family:'Montserrat',sans-serif">Nos Vidéos</h1>
+    <p class="text-on-surface-variant text-lg">Enseignements, worship et contenus pour nourrir votre foi.</p>
+  </div>
+
+  {% if categories %}
+  <!-- ── Section Catégories ── -->
+  <div class="cat-section">
+    <div class="cat-section-head">
+      <span class="cat-section-title">Catégories</span>
+      <div class="cat-nav-btns">
+        <button class="cat-nav-btn" onclick="scrollCat(-1)" aria-label="Précédent">
+          <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+        </button>
+        <button class="cat-nav-btn" onclick="scrollCat(1)" aria-label="Suivant">
+          <span class="material-symbols-outlined" style="font-size:18px">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="cat-scroll-wrap">
+      <div class="cat-row" id="cat-row">
+        {% for cat in categories %}
+        <a href="?categorie={{ cat.id }}"
+           class="cat-tile {% if selected_cat == cat.id|stringformat:'s' %}active{% endif %}"
+           style="background: linear-gradient(135deg, {{ cat.color }}, color-mix(in srgb, {{ cat.color }} 55%, black))">
+          <span class="material-symbols-outlined cat-tile-icon">{{ cat.icon }}</span>
+          <div class="cat-tile-gradient"></div>
+          <div class="cat-tile-label">
+            {{ cat.name }}
+          </div>
+        </a>
+        {% endfor %}
+        <!-- Tuile Toutes -->
+        <a href="{% url 'videos' %}"
+           class="cat-tile {% if not selected_cat %}active{% endif %}"
+           style="background: linear-gradient(135deg, #00261b, #1a4a2e)">
+          <span class="material-symbols-outlined cat-tile-icon">apps</span>
+          <div class="cat-tile-gradient"></div>
+          <div class="cat-tile-label">Toutes les vidéos</div>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Filtre compact en pills ── -->
+  <div class="filter-row">
+    <a href="{% url 'videos' %}" class="filter-pill {% if not selected_cat %}filter-pill-active{% else %}filter-pill-inactive{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:14px">apps</span> Toutes
+    </a>
+    {% for cat in categories %}
+    <a href="?categorie={{ cat.id }}"
+       class="filter-pill {% if selected_cat == cat.id|stringformat:'s' %}filter-pill-active{% else %}filter-pill-inactive{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:13px">{{ cat.icon }}</span>
+      {{ cat.name }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ── Résultats ── -->
+  {% if selected_cat %}
+  <p class="results-label">
+    <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+    {{ episodes|length }} vidéo{{ episodes|length|pluralize }} trouvée{{ episodes|length|pluralize }}
+  </p>
+  {% endif %}
+
+  {% if episodes %}
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    {% for episode in episodes %}
+    <div class="vid-card-wrap bg-white rounded-[24px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-[0px_8px_32px_rgba(11,61,46,0.1)] transition-all">
+
+      <!-- Thumbnail -->
+      <div class="vid-thumb"
+           data-cover-color="{{ episode.cover_color }}"
+           data-video-url="{{ episode.get_youtube_embed_url|default:episode.video_url }}"
+           data-video-type="{% if episode.get_youtube_embed_url %}youtube{% else %}direct{% endif %}"
+           data-download-url="{% if episode.video_url and not episode.get_youtube_embed_url %}{% url 'episode_download' episode.pk %}{% endif %}"
+           data-title="{{ episode.title }}"
+           data-episode-url="{% url 'video_detail' episode.pk %}"
+           onclick="openVideoModal(this)">
+        <span class="material-symbols-outlined text-white opacity-25" style="font-size:80px">smart_display</span>
+        <div class="play-overlay">
+          <div class="play-fab-vid">
+            <span class="material-symbols-outlined text-[#00261b]" style="font-size:28px;font-variation-settings:'FILL' 1">play_arrow</span>
+          </div>
+        </div>
+        <span class="absolute top-3 left-3 bg-black/55 text-white px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+          <span class="material-symbols-outlined align-middle" style="font-size:12px">smart_display</span> Vidéo
+        </span>
+        {% if episode.duration %}
+        <span class="absolute bottom-3 right-3 bg-black/55 text-white px-2 py-0.5 rounded text-xs font-bold">{{ episode.duration }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Infos -->
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-2">
+          {% if episode.category %}
+          <a href="?categorie={{ episode.category.id }}"
+             class="text-xs font-bold px-2.5 py-1 rounded-full transition-colors hover:opacity-80"
+             style="background:rgba(159,247,0,0.12);color:#416900">
+            <span class="material-symbols-outlined align-middle" style="font-size:12px">{{ episode.category.icon }}</span>
+            {{ episode.category.name }}
+          </a>
+          {% else %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:rgba(159,247,0,0.12);color:#416900">Général</span>
+          {% endif %}
+        </div>
+        <h3 class="font-bold text-primary text-lg mb-1 line-clamp-2" style="font-family:'Montserrat',sans-serif">{{ episode.title }}</h3>
+        <p class="text-on-surface-variant text-sm mb-4 line-clamp-2">{{ episode.description }}</p>
+
+        <div class="flex items-center justify-between pt-4 border-t border-surface-container">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold">K</div>
+            <div>
+              <span class="text-on-surface font-bold text-sm block">{{ episode.host|default:"The SafePlace by K" }}</span>
+              <span class="text-on-surface-variant text-xs">{{ episode.created_at|date:"d M Y" }}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div style="position:relative">
+              <button class="js-share-toggle w-9 h-9 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high transition-colors"
+                      data-url="{% url 'video_detail' episode.pk %}"
+                      data-title="{{ episode.title }}"
+                      aria-label="Partager">
+                <span class="material-symbols-outlined text-primary" style="font-size:18px">share</span>
+              </button>
+              <div class="share-panel" id="share-panel-{{ episode.pk }}">
+                <p class="text-xs text-on-surface-variant font-bold mb-2 px-2">Partager</p>
+                <button class="share-btn-item js-copy-link" data-url="{% url 'video_detail' episode.pk %}">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#416900">link</span> Copier le lien
+                </button>
+                <a class="share-btn-item" href="https://wa.me/?text={{ episode.title|urlencode }}%20{{ request.build_absolute_uri }}{% url 'video_detail' episode.pk %}" target="_blank" rel="noopener">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#25D366">chat</span> WhatsApp
+                </a>
+                <a class="share-btn-item" href="mailto:?subject={{ episode.title|urlencode }}&body=Regardez%20cette%20vid%C3%A9o%20:%20{% url 'video_detail' episode.pk %}">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#ea4335">mail</span> Email
+                </a>
+                {% if episode.video_url and not episode.get_youtube_embed_url %}
+                <a class="share-btn-item" href="{% url 'episode_download' episode.pk %}" rel="noopener" download>
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#00261b">download</span> Télécharger vidéo
+                </a>
+                {% endif %}
+              </div>
+            </div>
+            <a href="{% url 'video_detail' episode.pk %}" class="flex items-center gap-1 text-secondary font-bold text-sm hover:underline">
+              Voir <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+            </a>
+            {% if episode.video_url and not episode.get_youtube_embed_url %}
+            <a href="{% url 'episode_download' episode.pk %}" class="flex items-center gap-1 text-secondary font-bold text-sm hover:underline">
+              <span class="material-symbols-outlined text-[15px]">download</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-24">
+    <div class="w-24 h-24 rounded-full bg-surface-container mx-auto mb-6 flex items-center justify-center">
+      <span class="material-symbols-outlined text-6xl text-primary">smart_display</span>
+    </div>
+    {% if selected_cat %}
+    <h2 class="text-primary text-2xl font-bold mb-3">Aucune vidéo dans cette catégorie</h2>
+    <p class="text-on-surface-variant mb-6 max-w-md mx-auto">Les vidéos de cette catégorie arrivent bientôt.</p>
+    <a href="{% url 'videos' %}" class="bg-secondary-container text-on-secondary-container font-bold px-6 py-3 rounded-full hover:shadow-lg transition-all inline-block">Voir toutes les vidéos</a>
+    {% else %}
+    <h2 class="text-primary text-2xl font-bold mb-3">Vidéos à venir</h2>
+    <p class="text-on-surface-variant mb-6 max-w-md mx-auto">Publiez une vidéo depuis le studio en collant une URL YouTube ou un lien direct.</p>
+    <a href="{% url 'contact' %}" class="bg-secondary-container text-on-secondary-container font-bold px-6 py-3 rounded-full hover:shadow-lg transition-all inline-block">Nous contacter</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</main>
+
+<!-- ════ Modal Player Vidéo ════ -->
+<div class="vid-modal-overlay" id="vid-modal" role="dialog" aria-modal="true" aria-label="Lecteur vidéo">
+  <div class="vid-modal-box">
+    <div class="vid-modal-header">
+      <span class="vid-modal-title" id="vid-modal-title">Vidéo</span>
+      <div class="flex gap-2 items-center">
+        <a id="vid-modal-ext-link" href="#" target="_blank" rel="noopener"
+           class="flex items-center gap-1 text-xs text-white/60 hover:text-white font-bold px-3 py-1.5 rounded-full" style="background:rgba(255,255,255,0.08)">
+          <span class="material-symbols-outlined" style="font-size:15px">open_in_new</span> Ouvrir
+        </a>
+        <a id="vid-modal-download" href="#" rel="noopener" download
+           class="flex items-center gap-1 text-xs text-white/60 hover:text-white font-bold px-3 py-1.5 rounded-full"
+           style="background:rgba(255,255,255,0.08);display:none">
+          <span class="material-symbols-outlined" style="font-size:15px">download</span> Télécharger
+        </a>
+        <button class="vid-modal-close" onclick="closeVideoModal()" aria-label="Fermer">
+          <span class="material-symbols-outlined" style="font-size:20px">close</span>
+        </button>
+      </div>
+    </div>
+    <div class="vid-modal-player" id="vid-modal-player"></div>
+    <div class="vid-modal-footer">
+      <button class="js-modal-copy flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors"
+              style="background:rgba(255,255,255,0.1);color:#fff;border:none;cursor:pointer">
+        <span class="material-symbols-outlined" style="font-size:16px">link</span> Copier le lien
+      </button>
+      <a id="vid-modal-wa" href="#" target="_blank" rel="noopener"
+         class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold"
+         style="background:#25D366;color:#fff;text-decoration:none">
+        <span class="material-symbols-outlined" style="font-size:16px">chat</span> WhatsApp
+      </a>
+      <a id="vid-modal-email" href="#" class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold"
+         style="background:rgba(255,255,255,0.1);color:#fff;text-decoration:none">
+        <span class="material-symbols-outlined" style="font-size:16px">mail</span> Email
+      </a>
+      <a id="vid-modal-detail" href="#"
+         class="ml-auto flex items-center gap-1 text-sm font-bold"
+         style="color:#9ff700;text-decoration:none">
+        Page complète <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var currentModalEpisodeUrl = '';
+
+function scrollCat(dir) {
+  var row = document.getElementById('cat-row');
+  row.scrollBy({ left: dir * 480, behavior: 'smooth' });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.vid-thumb[data-cover-color]').forEach(function(thumb) {
+    var color = thumb.dataset.coverColor;
+    if (color) thumb.style.background = 'linear-gradient(135deg,' + color + ',#416900)';
+  });
+});
+
+function openVideoModal(thumb) {
+  var videoUrl = thumb.dataset.videoUrl;
+  var videoType = thumb.dataset.videoType;
+  var title = thumb.dataset.title;
+  var episodeUrl = thumb.dataset.episodeUrl;
+  currentModalEpisodeUrl = episodeUrl;
+
+  document.getElementById('vid-modal-title').textContent = title;
+  document.getElementById('vid-modal-ext-link').href = videoUrl || episodeUrl;
+  document.getElementById('vid-modal-detail').href = episodeUrl;
+  var dl = document.getElementById('vid-modal-download');
+  if (videoType === 'direct' && thumb.dataset.downloadUrl) {
+    dl.href = thumb.dataset.downloadUrl; dl.style.display = 'inline-flex';
+  } else { dl.style.display = 'none'; }
+  document.getElementById('vid-modal-wa').href = 'https://wa.me/?text=' + encodeURIComponent(title + ' ' + location.origin + episodeUrl);
+  document.getElementById('vid-modal-email').href = 'mailto:?subject=' + encodeURIComponent(title) + '&body=' + encodeURIComponent('Regardez cette vidéo : ' + location.origin + episodeUrl);
+
+  var player = document.getElementById('vid-modal-player');
+  if (videoType === 'youtube' && videoUrl) {
+    player.innerHTML = '<iframe src="' + videoUrl + '?autoplay=1&rel=0&modestbranding=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  } else if (videoUrl) {
+    player.innerHTML = '<video controls autoplay preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;background:#000;object-fit:contain"><source src="' + videoUrl + '" type="video/mp4"><source src="' + videoUrl + '" type="video/webm"></video>';
+  } else {
+    player.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:14px">Aucune source vidéo disponible</div>';
+  }
+
+  document.getElementById('vid-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVideoModal() {
+  document.getElementById('vid-modal').classList.remove('open');
+  document.getElementById('vid-modal-player').innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+document.getElementById('vid-modal').addEventListener('click', function(e) { if (e.target === this) closeVideoModal(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeVideoModal(); });
+
+document.querySelector('.js-modal-copy').addEventListener('click', function() {
+  navigator.clipboard.writeText(location.origin + currentModalEpisodeUrl).then(function() {
+    var btn = document.querySelector('.js-modal-copy'), orig = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">check</span> Copié !';
+    setTimeout(function() { btn.innerHTML = orig; }, 2000);
+  });
+});
+
+document.querySelectorAll('.js-share-toggle').forEach(function(btn) {
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var panel = btn.parentElement.querySelector('.share-panel');
+    var isOpen = panel.classList.contains('open');
+    document.querySelectorAll('.share-panel').forEach(function(p) { p.classList.remove('open'); });
+    if (!isOpen) panel.classList.add('open');
+  });
+});
+
+document.querySelectorAll('.js-copy-link').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    navigator.clipboard.writeText(location.origin + btn.dataset.url).then(function() {
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;color:#416900">check</span> Lien copié !';
+      setTimeout(function() { btn.innerHTML = orig; }, 2000);
+    });
+    btn.closest('.share-panel').classList.remove('open');
+  });
+});
+
+document.addEventListener('click', function() {
+  document.querySelectorAll('.share-panel').forEach(function(p) { p.classList.remove('open'); });
+});
+</script>
+{% endblock %}

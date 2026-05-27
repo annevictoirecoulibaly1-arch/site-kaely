@@ -1,0 +1,131 @@
+name: Django Tests & Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'safeplace_test' }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'test' }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'test' }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-django pytest-cov
+    
+    - name: Run migrations
+      env:
+        POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'safeplace_test' }}
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'test' }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'test' }}
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key-for-ci-only' }}
+      run: python manage.py migrate
+    
+    - name: Run tests
+      env:
+        POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'safeplace_test' }}
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'test' }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'test' }}
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key-for-ci-only' }}
+      run: pytest --cov=podcastSafe --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to production
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+        chmod 700 ~/.ssh/id_rsa
+        ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
+        ssh $SERVER_USER@$SERVER_HOST 'cd /app && git pull origin main && docker-compose build && docker-compose up -d && docker-compose exec -T web python manage.py migrate'

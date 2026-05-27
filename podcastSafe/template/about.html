@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}À Propos — The SafePlace by K{% endblock %}
+{% block content %}
+<main class="max-w-container-max-width mx-auto px-4 md:px-margin-desktop py-10">
+
+  <!-- Hero -->
+  <div class="bg-primary rounded-[32px] p-10 md:p-16 mb-12 relative overflow-hidden text-center">
+    <div class="absolute inset-0 opacity-10">
+      <span class="absolute text-white text-9xl top-0 left-8">
+        <span class="material-symbols-outlined">church</span>
+      </span>
+      <span class="absolute text-white text-6xl bottom-4 right-16">
+        <span class="material-symbols-outlined">church</span>
+      </span>
+    </div>
+    <div class="relative z-10">
+      <div class="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mx-auto mb-6 border border-white/20">
+        <span class="material-symbols-outlined text-4xl text-white">church</span>
+      </div>
+      <h1 class="font-display-lg text-white text-3xl md:text-5xl mb-4">À Propos de The SafePlace by K</h1>
+      <p class="text-white/80 text-body-lg max-w-2xl mx-auto">Votre refuge de foi et d'inspirations chrétiennes — un espace où la Parole de Dieu est partagée avec amour, authenticité et passion.</p>
+    </div>
+  </div>
+
+  <!-- Mission -->
+  <section class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-12">
+    <div class="p-8 bg-surface-container-low rounded-[24px] border border-slate-100">
+      <div class="w-12 h-12 bg-secondary-container rounded-xl flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-secondary" style="font-variation-settings:'FILL' 1">church</span>
+      </div>
+      <h2 class="font-headline-md text-primary text-xl mb-4">Notre Mission</h2>
+      <p class="text-on-surface-variant leading-relaxed">The SafePlace by K est un ministère numérique dédié à partager la Bonne Nouvelle de Jésus-Christ à travers des podcasts, des émissions live et des messages d'espoir. Nous croyons que la foi se nourrit au quotidien.</p>
+    </div>
+    <div class="p-8 bg-surface-container-low rounded-[24px] border border-slate-100">
+      <div class="w-12 h-12 bg-secondary-container rounded-xl flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-secondary" style="font-variation-settings:'FILL' 1">favorite</span>
+      </div>
+      <h2 class="font-headline-md text-primary text-xl mb-4">Nos Motivations</h2>
+      <ul class="space-y-3 text-on-surface-variant">
+        <li class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>Booster la foi </li>
+        <li class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>Encourager les freres et soeurs</li>
+        <li class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>S'entretenir spirituellement</li>
+        <li class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>Permettre à chacun d'exposer ses temoignages</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Équipe -->
+  <section class="mb-12">
+    <h2 class="font-headline-lg text-primary text-2xl mb-8 text-center">Notre Équipe</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+      <div class="text-center p-8 bg-surface-container-low rounded-[24px] border border-slate-100">
+        <div class="w-20 h-20 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold">K</div>
+        <h3 class="font-headline-md text-primary text-lg mb-1">Kaely Karell Kouame</h3>
+        <p class="text-secondary font-bold text-sm mb-3">Fondatrice & Présentatrice</p>
+        <p class="text-on-surface-variant text-sm">Passionnée de la Parole de Dieu, Kaely Karell Kouame partage son cœur,des temoignage et exhortation.</p>
+      </div>
+      <div class="text-center p-8 bg-surface-container-low rounded-[24px] border border-slate-100">
+        <div class="w-20 h-20 rounded-full bg-primary-container mx-auto mb-4 flex items-center justify-center text-primary text-2xl">
+          <span class="material-symbols-outlined">engineering</span>
+        </div>
+        <h3 class="font-headline-md text-primary text-lg mb-1">L'Équipe Technique</h3>
+        <p class="text-secondary font-bold text-sm mb-3">Production & Streaming</p>
+        <p class="text-on-surface-variant text-sm">Une équipe dédiée pour vous offrir le meilleur de la qualité audio et visuelle.</p>
+      </div>
+      <div class="text-center p-8 bg-surface-container-low rounded-[24px] border border-slate-100">
+        <div class="w-20 h-20 rounded-full bg-secondary-container mx-auto mb-4 flex items-center justify-center text-on-secondary-container text-2xl">
+          <span class="material-symbols-outlined">groups</span>
+        </div>
+        <h3 class="font-headline-md text-primary text-lg mb-1">La Communauté</h3>
+        <p class="text-secondary font-bold text-sm mb-3"></p>
+        <p class="text-on-surface-variant text-sm">Vous, nos auditeurs fidèles, êtes au cœur de tout ce que nous faisons.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="text-center py-12 bg-surface-container-low rounded-[32px] border border-slate-100">
+    <h2 class="font-headline-lg text-primary text-2xl mb-4">Rejoignez la Communauté</h2>
+    <p class="text-on-surface-variant mb-8 max-w-md mx-auto">Faites partie de notre famille chrétienne. Écoutez, partagez et grandissez ensemble dans la foi.</p>
+    <div class="flex gap-4 justify-center flex-wrap">
+      <a href="{% url 'podcasts' %}" class="bg-primary text-on-primary font-bold px-8 py-4 rounded-full hover:opacity-90 active:scale-95 transition-all">Écouter les podcasts</a>
+      <a href="{% url 'contact' %}" class="bg-surface-container text-primary font-bold px-8 py-4 rounded-full border border-outline-variant hover:bg-surface-container-high transition-all">Nous contacter</a>
+    </div>
+  </div>
+</main>
+{% endblock %}

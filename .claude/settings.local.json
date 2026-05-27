@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\couli\\\\Desktop\\\\the-SafePlaceBy-K-master\\\\static\\\\js\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\couli\\\\Desktop\\\\the-SafePlaceBy-K-master\\\\static\\\\css\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\couli\\\\Desktop\\\\the-SafePlaceBy-K-master\\\\dashboard\")",
+      "PowerShell(Start-Process \"http://127.0.0.1:8000/studio/\")",
+      "Bash(winget install *)",
+      "PowerShell(& \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Links\\\\ffmpeg.exe\" -version 2>&1 | Select-Object -First 2)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\couli\\\\Desktop\\\\the-SafePlaceBy-K-master\\\\podcastSafe\" -File | ForEach-Object {$_.Name})"
+    ]
+  }
+}

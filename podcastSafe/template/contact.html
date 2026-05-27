@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Contact — The SafePlace by K{% endblock %}
+{% block content %}
+<main class="max-w-container-max-width mx-auto px-4 md:px-margin-desktop py-10">
+
+  <div class="mb-10 text-center">
+    <h1 class="font-display-lg text-primary text-3xl md:text-5xl mb-3">Nous Contacter</h1>
+    <p class="text-on-surface-variant text-body-lg">Une question, un témoignage, une demande de prière ? Écrivez-nous.</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter max-w-5xl mx-auto">
+
+    <!-- Formulaire -->
+    <div class="bg-surface-container-lowest p-8 rounded-[24px] border border-outline-variant shadow-[0px_4px_20px_rgba(11,61,46,0.05)]">
+
+      {% if success %}
+      <div class="text-center py-8">
+        <div class="w-16 h-16 rounded-full bg-secondary-container mx-auto mb-4 flex items-center justify-center">
+          <span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings:'FILL' 1">check_circle</span>
+        </div>
+        <h3 class="font-headline-md text-primary text-xl mb-2">Message envoyé !</h3>
+        <p class="text-on-surface-variant">Nous vous répondrons dans les plus brefs délais. Que Dieu vous bénisse !</p>
+        <a href="{% url 'home' %}" class="mt-6 inline-block bg-primary text-on-primary font-bold px-6 py-3 rounded-full hover:opacity-90 transition-all">Retour à l'accueil</a>
+      </div>
+      {% else %}
+      <h3 class="font-headline-md text-primary mb-6 text-xl">Envoyez-nous un message</h3>
+      <form method="POST" class="space-y-5">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-label-md text-on-surface mb-2 text-sm">Prénom *</label>
+            <input type="text" name="first_name" required placeholder="Jean"
+                   class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/30 outline-none bg-surface-container-low font-body-md"/>
+          </div>
+          <div>
+            <label class="block font-label-md text-on-surface mb-2 text-sm">Nom</label>
+            <input type="text" name="last_name" placeholder="Dupont"
+                   class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/30 outline-none bg-surface-container-low font-body-md"/>
+          </div>
+        </div>
+        <div>
+          <label class="block font-label-md text-on-surface mb-2 text-sm">Email *</label>
+          <input type="email" name="email" required placeholder="jean@exemple.com"
+                 class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/30 outline-none bg-surface-container-low font-body-md"/>
+        </div>
+        <div>
+          <label class="block font-label-md text-on-surface mb-2 text-sm">Sujet</label>
+          <select name="subject" class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/30 outline-none bg-surface-container-low font-body-md">
+            <option>Question générale</option>
+            <option>Demande de prière</option>
+            <option>Partenariat</option>
+            <option>Témoignage</option>
+            <option>Problème technique</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-label-md text-on-surface mb-2 text-sm">Message *</label>
+          <textarea name="message" required rows="5" placeholder="Votre message..."
+                    class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/30 outline-none bg-surface-container-low font-body-md resize-none"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-primary text-on-primary font-bold py-4 rounded-full hover:opacity-90 active:scale-95 transition-all">
+          <span class="material-symbols-outlined mr-2">send</span>Envoyer le message
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Infos contact -->
+    <div class="space-y-6">
+      <div class="bg-primary p-8 rounded-[24px] text-on-primary relative overflow-hidden">
+        <div class="absolute top-0 right-0 opacity-10 text-white text-8xl">
+          <span class="material-symbols-outlined">church</span>
+        </div>
+        <div class="relative z-10">
+          <h3 class="font-headline-md text-xl mb-6">The SafePlace by K</h3>
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-secondary-fixed" style="font-variation-settings:'FILL' 1">mail</span>
+              <span class="text-white/80">contact@thesafeplace.fr</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-secondary-fixed" style="font-variation-settings:'FILL' 1">language</span>
+              <span class="text-white/80">www.thesafeplace.fr</span>
+            </div>
+          </div>
+          <div class="mt-8 pt-6 border-t border-white/20">
+            <p class="text-white/60 text-sm mb-4">Suivez-nous</p>
+            <div class="flex gap-3">
+              <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all font-bold text-white text-xs">YT</a>
+              <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all font-bold text-white text-xs">FB</a>
+              <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all font-bold text-white text-xs">IG</a>
+              <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all font-bold text-white text-xs">TK</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface-container-low p-8 rounded-[24px] border border-slate-100 text-center">
+        <h3 class="font-headline-md text-primary text-lg mb-3">Demande de Prière</h3>
+        <p class="text-on-surface-variant text-sm mb-4">Notre équipe intercède pour toutes les demandes de prière soumises avec amour et ferveur.</p>
+        <p class="text-secondary font-bold text-sm">"Ne vous inquiétez de rien" — Phil 4:6</p>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

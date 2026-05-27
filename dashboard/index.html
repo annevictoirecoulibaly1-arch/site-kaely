@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SafePlace Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@300..700,0..1" rel="stylesheet"/>
+<style>
+/* ═══════════════ VARIABLES ═══════════════ */
+:root{
+  --bg:#06100a;--sb:#080f0b;--card:#0e1c11;--card2:#131f15;
+  --border:rgba(159,247,0,.1);--border2:rgba(159,247,0,.18);
+  --accent:#9ff700;--accent-dim:rgba(159,247,0,.13);
+  --text:#dff0d9;--muted:#5a7a5c;--muted2:#3d5c40;
+  --danger:#ff4455;--warn:#f59e0b;--info:#38bdf8;
+  --radius:14px;--radius-sm:8px;--sidebar-w:240px;
+  --transition:.18s ease;
+}
+
+/* ═══════════════ RESET ═══════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;display:inline-block;line-height:1;vertical-align:middle}
+
+/* ═══════════════ SCROLLBAR ═══════════════ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:99px}
+
+/* ═══════════════ LOGIN SCREEN ═══════════════ */
+#login-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:24px;
+  background:radial-gradient(ellipse 70% 60% at 50% 0%, rgba(159,247,0,.08) 0%, transparent 70%),var(--bg);
+}
+.login-box{
+  width:100%;max-width:420px;
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:24px;padding:40px 36px;
+}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.login-logo-icon{width:44px;height:44px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.login-logo-icon .material-symbols-outlined{color:#00261b;font-size:24px;font-variation-settings:'FILL' 1}
+.login-logo h1{font-family:'Montserrat',sans-serif;font-size:1.25rem;font-weight:800;color:var(--text)}
+.login-logo span{font-size:.7rem;color:var(--accent);font-weight:600;letter-spacing:.08em;text-transform:uppercase;display:block}
+.login-tagline{color:var(--muted);font-size:.85rem;margin-bottom:28px;line-height:1.5}
+
+/* ═══════════════ FORM ELEMENTS ═══════════════ */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:.03em;text-transform:uppercase}
+.field input,.field select,.field textarea{
+  width:100%;background:#0c1a0e;border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:.9rem;
+  transition:border-color var(--transition);outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:90px}
+.field select option{background:#0c1a0e}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-hint{font-size:.75rem;color:var(--muted);margin-top:4px}
+
+/* ═══════════════ BUTTONS ═══════════════ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:999px;border:none;font-weight:600;font-size:.85rem;transition:all var(--transition);white-space:nowrap}
+.btn-accent{background:var(--accent);color:#00261b}
+.btn-accent:hover{background:#b5ff1a;transform:translateY(-1px)}
+.btn-ghost{background:rgba(255,255,255,.06);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.btn-danger{background:rgba(255,68,85,.15);color:var(--danger)}
+.btn-danger:hover{background:rgba(255,68,85,.25)}
+.btn-warn{background:rgba(245,158,11,.15);color:var(--warn)}
+.btn-warn:hover{background:rgba(245,158,11,.25)}
+.btn-success{background:var(--accent-dim);color:var(--accent)}
+.btn-success:hover{background:rgba(159,247,0,.22)}
+.btn-sm{padding:6px 12px;font-size:.78rem}
+.btn-icon{padding:7px;border-radius:var(--radius-sm)}
+.btn:disabled{opacity:.5;pointer-events:none}
+.btn-full{width:100%;justify-content:center;border-radius:var(--radius-sm);padding:12px}
+
+/* ═══════════════ APP SHELL ═══════════════ */
+#app{display:none;height:100vh;overflow:hidden}
+.app-layout{display:flex;height:100%}
+
+/* ═══════════════ SIDEBAR ═══════════════ */
+#sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--sb);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;
+  transition:transform var(--transition);
+}
+.sb-logo{
+  display:flex;align-items:center;gap:10px;
+  padding:20px 18px 16px;border-bottom:1px solid var(--border);
+}
+.sb-logo-icon{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-icon .material-symbols-outlined{color:#00261b;font-size:19px;font-variation-settings:'FILL' 1}
+.sb-logo-text{font-family:'Montserrat',sans-serif;font-weight:800;font-size:.92rem;color:var(--text);line-height:1.2}
+.sb-logo-sub{font-size:.62rem;color:var(--accent);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.sb-section{padding:10px 10px 4px;font-size:.65rem;font-weight:700;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase}
+.sb-nav{padding:4px 8px;display:flex;flex-direction:column;gap:2px}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--radius-sm);
+  color:var(--muted);font-weight:500;font-size:.875rem;
+  cursor:pointer;transition:all var(--transition);position:relative;
+}
+.sb-item:hover{background:var(--accent-dim);color:var(--text)}
+.sb-item.active{background:var(--accent-dim);color:var(--accent);font-weight:600}
+.sb-item.active::before{content:'';position:absolute;left:0;top:25%;bottom:25%;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.sb-item .material-symbols-outlined{font-size:19px}
+.sb-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:99px;min-width:20px;text-align:center}
+.sb-badge.green{background:var(--accent);color:#00261b}
+.sb-footer{margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)}
+.sb-api-info{padding:8px 12px;border-radius:var(--radius-sm);background:var(--accent-dim);margin-bottom:8px}
+.sb-api-info p{font-size:.72rem;color:var(--muted);margin-bottom:2px}
+.sb-api-info span{font-size:.75rem;color:var(--accent);font-weight:600;word-break:break-all}
+
+/* ═══════════════ MAIN CONTENT ═══════════════ */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;border-bottom:1px solid var(--border);
+  background:rgba(8,15,11,.85);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:10;flex-shrink:0;
+}
+#page-title{font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text)}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+#content{flex:1;overflow-y:auto;padding:24px}
+
+/* ═══════════════ SECTION (hidden/shown) ═══════════════ */
+.section{display:none}
+.section.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ═══════════════ STATS GRID ═══════════════ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;transition:border-color var(--transition),transform var(--transition);
+}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.stat-val{font-size:1.8rem;font-weight:800;font-family:'Montserrat',sans-serif;line-height:1;margin-bottom:4px}
+.stat-label{font-size:.75rem;color:var(--muted);font-weight:500}
+.stat-sub{font-size:.72rem;color:var(--muted);margin-top:6px}
+.stat-sub span{color:var(--accent);font-weight:600}
+
+/* ═══════════════ TABLES ═══════════════ */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.table-title{font-weight:700;font-size:.95rem}
+.table-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);padding:7px 12px}
+.search-box input{background:transparent;border:none;outline:none;color:var(--text);font-size:.85rem;width:160px}
+.search-box .material-symbols-outlined{color:var(--muted);font-size:17px}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--border)}
+th{padding:10px 16px;text-align:left;font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+td{padding:12px 16px;font-size:.875rem;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-actions{display:flex;gap:6px;align-items:center}
+.td-truncate{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ═══════════════ BADGES ═══════════════ */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;letter-spacing:.02em}
+.badge-green{background:rgba(159,247,0,.15);color:var(--accent)}
+.badge-red{background:rgba(255,68,85,.15);color:var(--danger)}
+.badge-yellow{background:rgba(245,158,11,.15);color:var(--warn)}
+.badge-blue{background:rgba(56,189,248,.15);color:var(--info)}
+.badge-gray{background:rgba(255,255,255,.08);color:var(--muted)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-green{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.dot-red{background:var(--danger)}
+.dot-yellow{background:var(--warn);animation:pulse 2s infinite}
+.dot-gray{background:var(--muted)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ═══════════════ LIVE CARDS ═══════════════ */
+.lives-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.live-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;transition:border-color var(--transition);
+}
+.live-card:hover{border-color:var(--border2)}
+.live-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.live-card-platform{display:flex;align-items:center;gap:8px}
+.live-platform-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;letter-spacing:.03em}
+.live-card h3{font-size:.95rem;font-weight:700;line-height:1.3;margin-bottom:4px}
+.live-card p{font-size:.8rem;color:var(--muted);line-height:1.4;margin-bottom:12px}
+.live-card-url{font-size:.75rem;color:var(--muted);word-break:break-all;padding:8px;background:rgba(255,255,255,.04);border-radius:6px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.live-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.live-card.is-live{border-color:rgba(255,68,85,.4);box-shadow:0 0 24px rgba(255,68,85,.08)}
+
+/* ═══════════════ TWO-COL GRID (recent tables) ═══════════════ */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* ═══════════════ MESSAGES ═══════════════ */
+.msg-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background var(--transition);
+}
+.msg-item:hover{background:rgba(255,255,255,.03)}
+.msg-item:last-child{border-bottom:none}
+.msg-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:.9rem;flex-shrink:0}
+.msg-body{flex:1;min-width:0}
+.msg-from{font-weight:600;font-size:.875rem;display:flex;align-items:center;gap:8px}
+.msg-subject{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-date{font-size:.72rem;color:var(--muted2);white-space:nowrap;margin-left:auto;flex-shrink:0}
+.msg-unread .msg-from{color:var(--accent)}
+.msg-unread-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px}
+
+/* ═══════════════ EMPTY STATE ═══════════════ */
+.empty{
+  text-align:center;padding:56px 24px;color:var(--muted);
+}
+.empty .material-symbols-outlined{font-size:52px;opacity:.25;display:block;margin-bottom:12px}
+.empty p{font-size:.9rem}
+
+/* ═══════════════ PAGINATION ═══════════════ */
+.pagination{display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border);justify-content:center}
+.pagination .btn-ghost{padding:6px 12px;border-radius:6px}
+.pagination span{font-size:.8rem;color:var(--muted)}
+
+/* ═══════════════ MODALS ═══════════════ */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:16px;
+}
+.modal-overlay.open{display:flex;animation:fadeIn .18s ease}
+.modal-box{
+  background:var(--card);border:1px solid var(--border2);border-radius:20px;
+  width:100%;max-width:600px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 32px 80px rgba(0,0,0,.6);
+  animation:slideUp .22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.modal-box.modal-lg{max-width:760px}
+.modal-box.modal-sm{max-width:420px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0}
+.modal-header h2{font-family:'Montserrat',sans-serif;font-size:1.05rem;font-weight:800}
+.modal-close{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.07);border:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)}
+.modal-close:hover{background:rgba(255,255,255,.12);color:var(--text)}
+.modal-body{padding:20px 24px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:0 24px 20px}
+
+/* ═══════════════ SEGMENTED CONTROL ═══════════════ */
+.seg{display:flex;background:rgba(255,255,255,.06);border-radius:var(--radius-sm);padding:3px;gap:2px}
+.seg-btn{flex:1;padding:7px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:.82rem;font-weight:600;cursor:pointer;transition:all var(--transition)}
+.seg-btn.active{background:var(--accent);color:#00261b}
+
+/* ═══════════════ TOAST ═══════════════ */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 18px;border-radius:var(--radius-sm);
+  font-size:.85rem;font-weight:600;min-width:220px;max-width:360px;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+  animation:toastIn .25s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:all;
+}
+@keyframes toastIn{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+.toast-success{background:#0d2410;border:1px solid rgba(159,247,0,.3);color:var(--accent)}
+.toast-error{background:#1a0808;border:1px solid rgba(255,68,85,.3);color:var(--danger)}
+.toast-info{background:#071520;border:1px solid rgba(56,189,248,.3);color:var(--info)}
+
+/* ═══════════════ UPLOAD ZONE ═══════════════ */
+.upload-zone{
+  border:2px dashed var(--border2);border-radius:var(--radius-sm);
+  padding:20px;text-align:center;cursor:pointer;
+  transition:all var(--transition);
+}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:var(--accent-dim)}
+.upload-zone .material-symbols-outlined{font-size:32px;color:var(--muted);display:block;margin-bottom:8px}
+.upload-zone p{font-size:.82rem;color:var(--muted)}
+.upload-zone strong{color:var(--accent)}
+
+/* ═══════════════ COLOR PICKER ═══════════════ */
+.color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.color-swatch{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:border-color var(--transition)}
+.color-swatch.selected{border-color:var(--accent)}
+
+/* ═══════════════ LOADING ═══════════════ */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--muted);gap:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite;display:inline-block}
+
+/* ═══════════════ FILTER BAR ═══════════════ */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.filter-chip{padding:5px 14px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.78rem;font-weight:600;cursor:pointer;transition:all var(--transition)}
+.filter-chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.filter-chip:hover{border-color:var(--border2)}
+
+/* ═══════════════ RESPONSIVE ═══════════════ */
+@media(max-width:768px){
+  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%)}
+  #sidebar.open{transform:none}
+  #content{padding:16px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col{grid-template-columns:1fr}
+  .lives-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ LOGIN SCREEN ═══════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon"><span class="material-symbols-outlined">church</span></div>
+      <div>
+        <h1>SafePlace Studio</h1>
+        <span>Dashboard Admin</span>
+      </div>
+    </div>
+    <p class="login-tagline">Connectez-vous à votre backend Django pour gérer tout votre contenu depuis ce tableau de bord.</p>
+    <div class="field">
+      <label>URL de votre API Django</label>
+      <input id="inp-base" type="url" placeholder="http://127.0.0.1:8000" value="http://127.0.0.1:8000"/>
+      <p class="field-hint">Ex: https://votre-app.railway.app</p>
+    </div>
+    <div class="field">
+      <label>Clé API (DASHBOARD_API_KEY)</label>
+      <input id="inp-key" type="password" placeholder="safeplace_secret_dashboard_key_2026"/>
+    </div>
+    <div id="login-error" style="display:none;color:var(--danger);font-size:.82rem;margin-bottom:12px;padding:10px;background:rgba(255,68,85,.1);border-radius:8px"></div>
+    <button class="btn btn-accent btn-full" onclick="SP.login()">
+      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">login</span>
+      Se connecter au Studio
+    </button>
+    <p style="text-align:center;color:var(--muted);font-size:.75rem;margin-top:16px">Vos identifiants sont stockés localement dans ce navigateur uniquement.</p>
+  </div>
+</div>
+
+<!-- ═══════ APP SHELL ═══════ -->
+<div id="app">
+<div class="app-layout">
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon"><span class="material-symbols-outlined">church</span></div>
+    <div>
+      <div class="sb-logo-text">SafePlace</div>
+      <div class="sb-logo-sub">Studio</div>
+    </div>
+  </div>
+
+  <div class="sb-section">Principal</div>
+  <nav class="sb-nav">
+    <div class="sb-item active" data-section="overview">
+      <span class="material-symbols-outlined">dashboard</span>Vue d'ensemble
+    </div>
+    <div class="sb-item" data-section="analytics">
+      <span class="material-symbols-outlined">bar_chart</span>Analytiques
+    </div>
+  </nav>
+
+  <div class="sb-section">Contenu</div>
+  <nav class="sb-nav">
+    <div class="sb-item" data-section="podcasts">
+      <span class="material-symbols-outlined">headphones</span>Podcasts
+    </div>
+    <div class="sb-item" data-section="videos">
+      <span class="material-symbols-outlined">smart_display</span>Vidéos
+    </div>
+    <div class="sb-item" data-section="lives">
+      <span class="material-symbols-outlined">sensors</span>Lives
+      <span class="sb-badge green" id="badge-lives" style="display:none">0</span>
+    </div>
+  </nav>
+
+  <div class="sb-section">Communauté</div>
+  <nav class="sb-nav">
+    <div class="sb-item" data-section="comments">
+      <span class="material-symbols-outlined">comment</span>Commentaires
+      <span class="sb-badge" id="badge-comments" style="display:none">0</span>
+    </div>
+    <div class="sb-item" data-section="messages">
+      <span class="material-symbols-outlined">mail</span>Messages
+      <span class="sb-badge" id="badge-messages" style="display:none">0</span>
+    </div>
+    <div class="sb-item" data-section="subscribers">
+      <span class="material-symbols-outlined">group</span>Abonnés
+    </div>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-api-info">
+      <p>Connecté à</p>
+      <span id="sb-api-url">—</span>
+    </div>
+    <div class="sb-item" onclick="SP.logout()" style="color:var(--danger)">
+      <span class="material-symbols-outlined">logout</span>Déconnexion
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main id="main">
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button id="sb-toggle" class="btn btn-ghost btn-icon" style="display:none" onclick="document.getElementById('sidebar').classList.toggle('open')">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <span id="page-title">Vue d'ensemble</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="SP.refresh()">
+        <span class="material-symbols-outlined" style="font-size:16px" id="refresh-icon">refresh</span>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- ════ OVERVIEW ════ -->
+    <div class="section active" id="section-overview">
+      <div class="stats-grid" id="stats-grid"><div class="loading"><span class="material-symbols-outlined spin">progress_activity</span> Chargement…</div></div>
+      <div class="two-col">
+        <div class="table-wrap" id="recent-episodes-wrap">
+          <div class="table-head"><span class="table-title">Épisodes récents</span><a class="btn btn-ghost btn-sm" onclick="SP.show('podcasts')">Voir tout</a></div>
+          <div id="recent-episodes-body"><div class="loading"><span class="material-symbols-outlined spin">progress_activity</span></div></div>
+        </div>
+        <div class="table-wrap" id="recent-messages-wrap">
+          <div class="table-head"><span class="table-title">Messages récents</span><a class="btn btn-ghost btn-sm" onclick="SP.show('messages')">Voir tout</a></div>
+          <div id="recent-messages-body"><div class="loading"><span class="material-symbols-outlined spin">progress_activity</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ ANALYTICS ════ -->
+    <div class="section" id="section-analytics">
+      <div class="stats-grid" id="analytics-stats"></div>
+      <div class="two-col">
+        <div class="table-wrap">
+          <div class="table-head"><span class="table-title">Top épisodes (vues)</span></div>
+          <div id="top-episodes-body"></div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head"><span class="table-title">Épisodes par catégorie</span></div>
+          <div id="categories-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ PODCASTS ════ -->
+    <div class="section" id="section-podcasts">
+      <div class="filter-bar" id="podcast-filters">
+        <button class="filter-chip active" data-filter="">Tous</button>
+        <button class="filter-chip" data-filter="published">Publiés</button>
+        <button class="filter-chip" data-filter="draft">Brouillons</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <span class="table-title" id="podcast-count">Podcasts</span>
+          <div class="table-tools">
+            <div class="search-box"><span class="material-symbols-outlined">search</span><input id="podcast-search" placeholder="Rechercher…" oninput="SP.sections.podcasts.search(this.value)"/></div>
+            <button class="btn btn-accent btn-sm" onclick="SP.openEpisodeModal(null,'podcast')">
+              <span class="material-symbols-outlined" style="font-size:16px">add</span>Nouveau podcast
+            </button>
+          </div>
+        </div>
+        <div id="podcasts-body"></div>
+        <div class="pagination" id="podcasts-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ════ VIDEOS ════ -->
+    <div class="section" id="section-videos">
+      <div class="filter-bar" id="video-filters">
+        <button class="filter-chip active" data-filter="">Toutes</button>
+        <button class="filter-chip" data-filter="published">Publiées</button>
+        <button class="filter-chip" data-filter="draft">Brouillons</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <span class="table-title" id="video-count">Vidéos</span>
+          <div class="table-tools">
+            <div class="search-box"><span class="material-symbols-outlined">search</span><input id="video-search" placeholder="Rechercher…" oninput="SP.sections.videos.search(this.value)"/></div>
+            <button class="btn btn-accent btn-sm" onclick="SP.openEpisodeModal(null,'video')">
+              <span class="material-symbols-outlined" style="font-size:16px">add</span>Nouvelle vidéo
+            </button>
+          </div>
+        </div>
+        <div id="videos-body"></div>
+        <div class="pagination" id="videos-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ════ LIVES ════ -->
+    <div class="section" id="section-lives">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;gap:8px">
+          <div class="seg" id="live-filter">
+            <button class="seg-btn active" data-filter="">Tous</button>
+            <button class="seg-btn" data-filter="live">🔴 En direct</button>
+            <button class="seg-btn" data-filter="scheduled">Programmés</button>
+            <button class="seg-btn" data-filter="ended">Terminés</button>
+          </div>
+        </div>
+        <button class="btn btn-accent" onclick="SP.openLiveModal(null)">
+          <span class="material-symbols-outlined" style="font-size:16px;font-variation-settings:'FILL' 1">sensors</span>
+          Nouveau live
+        </button>
+      </div>
+      <div class="lives-grid" id="lives-grid"></div>
+    </div>
+
+    <!-- ════ COMMENTS ════ -->
+    <div class="section" id="section-comments">
+      <div class="filter-bar">
+        <button class="filter-chip active" data-filter="" onclick="SP.sections.comments.setFilter('')">Tous</button>
+        <button class="filter-chip" data-filter="true" onclick="SP.sections.comments.setFilter('true')">Approuvés</button>
+        <button class="filter-chip" data-filter="false" onclick="SP.sections.comments.setFilter('false')">En attente</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <span class="table-title" id="comments-count">Commentaires</span>
+          <div class="search-box"><span class="material-symbols-outlined">search</span><input id="comment-search" placeholder="Rechercher…" oninput="SP.sections.comments.search(this.value)"/></div>
+        </div>
+        <div id="comments-body"></div>
+      </div>
+    </div>
+
+    <!-- ════ MESSAGES ════ -->
+    <div class="section" id="section-messages">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="filter-bar" style="margin:0">
+          <button class="filter-chip active" onclick="SP.sections.messages.setFilter('')">Tous</button>
+          <button class="filter-chip" onclick="SP.sections.messages.setFilter('unread')">Non lus</button>
+          <button class="filter-chip" onclick="SP.sections.messages.setFilter('read')">Lus</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="SP.sections.messages.markAllRead()">
+          <span class="material-symbols-outlined" style="font-size:15px">mark_email_read</span>Tout marquer lu
+        </button>
+      </div>
+      <div class="table-wrap"><div id="messages-body"></div></div>
+    </div>
+
+    <!-- ════ SUBSCRIBERS ════ -->
+    <div class="section" id="section-subscribers">
+      <div class="table-wrap">
+        <div class="table-head">
+          <span class="table-title" id="sub-count">Abonnés</span>
+          <button class="btn btn-ghost btn-sm" onclick="SP.sections.subscribers.exportCsv()">
+            <span class="material-symbols-outlined" style="font-size:15px">download</span>Exporter CSV
+          </button>
+        </div>
+        <div id="subscribers-body"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div>
+</div><!-- /app -->
+
+<!-- ═══════ MODAL EPISODE ═══════ -->
+<div class="modal-overlay" id="modal-episode">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h2 id="episode-modal-title">Nouveau podcast</h2>
+      <button class="modal-close" onclick="SP.closeModal('modal-episode')"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ep-id"/>
+      <input type="hidden" id="ep-type"/>
+      <div class="field-row">
+        <div class="field" style="grid-column:1/-1">
+          <label>Titre *</label>
+          <input id="ep-title" placeholder="Titre de l'épisode…"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Description *</label>
+        <textarea id="ep-desc" placeholder="Description de l'épisode…" rows="3"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Catégorie</label>
+          <select id="ep-cat"><option value="">— Aucune —</option></select>
+        </div>
+        <div class="field">
+          <label>Présentateur</label>
+          <input id="ep-host" placeholder="The SafePlace by K"/>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Durée</label>
+          <input id="ep-duration" placeholder="45:32"/>
+        </div>
+        <div class="field">
+          <label>Couleur de couverture</label>
+          <div class="color-row" id="color-row"></div>
+        </div>
+      </div>
+
+      <!-- Podcast: audio URL -->
+      <div id="ep-audio-section">
+        <div class="field">
+          <label>URL Audio (SoundCloud, Podbean, etc.)</label>
+          <input id="ep-audio" type="url" placeholder="https://soundcloud.com/…"/>
+        </div>
+      </div>
+
+      <!-- Video: YouTube OR direct URL -->
+      <div id="ep-video-section" style="display:none">
+        <div class="seg" id="video-source-seg" style="margin-bottom:12px">
+          <button class="seg-btn active" data-vsrc="url">URL (YouTube / directe)</button>
+          <button class="seg-btn" data-vsrc="file">Upload fichier</button>
+        </div>
+        <div id="ep-url-source">
+          <div class="field">
+            <label>URL Vidéo</label>
+            <input id="ep-video" type="url" placeholder="https://youtube.com/watch?v=… ou URL directe"/>
+            <p class="field-hint">YouTube, Vimeo, ou lien direct .mp4</p>
+          </div>
+        </div>
+        <div id="ep-file-source" style="display:none">
+          <div class="field">
+            <label>Fichier vidéo (upload vers le serveur)</label>
+            <div class="upload-zone" id="ep-upload-zone" onclick="document.getElementById('ep-file-input').click()">
+              <span class="material-symbols-outlined">cloud_upload</span>
+              <p>Cliquez ou glissez un fichier ici<br><strong>MP4, WebM, MKV</strong> — Max 500 MB</p>
+              <p id="ep-file-name" style="color:var(--accent);margin-top:6px;display:none"></p>
+            </div>
+            <input type="file" id="ep-file-input" accept="video/*,audio/*" style="display:none" onchange="SP.onFileSelect(this)"/>
+          </div>
+          <div id="ep-upload-progress" style="display:none">
+            <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;overflow:hidden;margin-bottom:8px">
+              <div id="ep-upload-bar" style="height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width .2s"></div>
+            </div>
+            <p style="font-size:.78rem;color:var(--muted)" id="ep-upload-label">Upload…</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="ep-published" checked style="width:16px;height:16px;accent-color:var(--accent)"/>
+          Publier immédiatement
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="SP.closeModal('modal-episode')">Annuler</button>
+      <button class="btn btn-accent" id="ep-save-btn" onclick="SP.saveEpisode()">
+        <span class="material-symbols-outlined" style="font-size:16px;font-variation-settings:'FILL' 1">save</span>
+        Enregistrer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL LIVE ═══════ -->
+<div class="modal-overlay" id="modal-live">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="live-modal-title">Nouveau live</h2>
+      <button class="modal-close" onclick="SP.closeModal('modal-live')"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="live-id"/>
+      <div class="field">
+        <label>Titre *</label>
+        <input id="live-title" placeholder="Titre du live…"/>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="live-desc" placeholder="Description…" rows="2"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Plateforme</label>
+          <select id="live-platform">
+            <option value="youtube">YouTube</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+            <option value="twitch">Twitch</option>
+            <option value="other">Autre</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Statut</label>
+          <select id="live-status">
+            <option value="scheduled">Programmé</option>
+            <option value="live">🔴 EN DIRECT</option>
+            <option value="ended">Terminé</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>URL du live (lien public)</label>
+        <input id="live-url" type="url" placeholder="https://youtube.com/live/…"/>
+      </div>
+      <div class="field">
+        <label>URL Embed (iframe pour le site)</label>
+        <input id="live-embed" type="url" placeholder="https://youtube.com/embed/…"/>
+        <p class="field-hint">Coller l'URL d'intégration YouTube/Facebook pour l'afficher sur le site</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="SP.closeModal('modal-live')">Annuler</button>
+      <button class="btn btn-accent" onclick="SP.saveLive()">
+        <span class="material-symbols-outlined" style="font-size:16px;font-variation-settings:'FILL' 1">save</span>
+        Enregistrer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL CONFIRM ═══════ -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-box modal-sm">
+    <div class="modal-header"><h2 id="confirm-title">Confirmer</h2>
+      <button class="modal-close" onclick="SP.closeModal('modal-confirm')"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body"><p id="confirm-msg" style="color:var(--muted);line-height:1.6"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="SP.closeModal('modal-confirm')">Annuler</button>
+      <button class="btn btn-danger" id="confirm-ok">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL MESSAGE ═══════ -->
+<div class="modal-overlay" id="modal-message">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="msg-modal-from">Message</h2>
+      <button class="modal-close" onclick="SP.closeModal('modal-message')"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:4px" id="msg-modal-email"></p>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:16px" id="msg-modal-date"></p>
+      <p style="font-weight:700;margin-bottom:10px" id="msg-modal-subject"></p>
+      <p style="line-height:1.7;color:var(--text);white-space:pre-wrap" id="msg-modal-body"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="msg-modal-delete-btn">
+        <span class="material-symbols-outlined" style="font-size:15px">delete</span>Supprimer
+      </button>
+      <a class="btn btn-ghost btn-sm" id="msg-modal-reply-btn" href="#" target="_blank">
+        <span class="material-symbols-outlined" style="font-size:15px">reply</span>Répondre par email
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   SafePlace Studio — Main App
+════════════════════════════════════════════════════════ */
+const SP = {
+
+  /* ── Config ── */
+  cfg: { base: '', key: '' },
+  state: {
+    section: 'overview',
+    podcastPage: 1, podcastFilter: '', podcastSearch: '',
+    videoPage: 1, videoFilter: '', videoSearch: '',
+    liveFilter: '',
+    commentFilter: '', commentSearch: '',
+    messageFilter: '',
+    categories: [],
+  },
+
+  /* ══════════════════════════════
+     AUTH
+  ══════════════════════════════ */
+  async login() {
+    const base = document.getElementById('inp-base').value.trim().replace(/\/+$/,'');
+    const key  = document.getElementById('inp-key').value.trim();
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    if (!base || !key) { SP.showLoginError('URL et clé API obligatoires.'); return; }
+    try {
+      const res = await fetch(`${base}/api/v1/dashboard-data/`, {
+        headers: { 'X-API-KEY': key }
+      });
+      if (!res.ok) { SP.showLoginError(`Erreur ${res.status} — Vérifiez votre URL et clé API.`); return; }
+      localStorage.setItem('sp_base', base);
+      localStorage.setItem('sp_key', key);
+      SP.cfg.base = base; SP.cfg.key = key;
+      SP.boot();
+    } catch(e) {
+      SP.showLoginError('Impossible de joindre le serveur. Vérifiez l\'URL et que CORS est activé.');
+    }
+  },
+
+  showLoginError(msg) {
+    const el = document.getElementById('login-error');
+    el.textContent = msg; el.style.display = 'block';
+  },
+
+  logout() {
+    localStorage.removeItem('sp_base'); localStorage.removeItem('sp_key');
+    SP.cfg = { base:'', key:'' };
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  },
+
+  /* ══════════════════════════════
+     BOOT
+  ══════════════════════════════ */
+  boot() {
+    const base = localStorage.getItem('sp_base');
+    const key  = localStorage.getItem('sp_key');
+    if (!base || !key) { document.getElementById('login-screen').style.display='flex'; return; }
+    SP.cfg.base = base; SP.cfg.key = key;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('sb-api-url').textContent = base.replace(/^https?:\/\//,'');
+
+    /* Nav items */
+    document.querySelectorAll('.sb-item[data-section]').forEach(el => {
+      el.addEventListener('click', () => SP.show(el.dataset.section));
+    });
+    /* Filter chips */
+    document.querySelectorAll('.filter-bar .filter-chip').forEach(el => {
+      el.addEventListener('click', function() {
+        this.closest('.filter-bar').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        if (this.closest('#section-podcasts')) SP.sections.podcasts.setFilter(this.dataset.filter);
+        if (this.closest('#section-videos'))  SP.sections.videos.setFilter(this.dataset.filter);
+      });
+    });
+    /* Live filter seg */
+    document.querySelectorAll('#live-filter .seg-btn').forEach(el => {
+      el.addEventListener('click', function() {
+        document.querySelectorAll('#live-filter .seg-btn').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        SP.sections.lives.setFilter(this.dataset.filter);
+      });
+    });
+    /* Color swatches */
+    const colors = ['#00261b','#416900','#1a4a6e','#6b1a1a','#2d1a6b','#1a6b4a','#5c3317','#1a5c5c'];
+    const cr = document.getElementById('color-row');
+    colors.forEach(c => {
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch'; sw.style.background = c; sw.dataset.color = c;
+      sw.onclick = () => { document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected')); sw.classList.add('selected'); };
+      cr.appendChild(sw);
+    });
+    cr.firstChild.classList.add('selected');
+
+    /* Video source toggle */
+    document.querySelectorAll('#video-source-seg .seg-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#video-source-seg .seg-btn').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('ep-url-source').style.display  = this.dataset.vsrc==='url'  ? '' : 'none';
+        document.getElementById('ep-file-source').style.display = this.dataset.vsrc==='file' ? '' : 'none';
+      });
+    });
+
+    /* Upload zone drag/drop */
+    const zone = document.getElementById('ep-upload-zone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('dragover');
+      const f = e.dataTransfer.files[0];
+      if (f) SP.onFileSelect({ files: [f] });
+    });
+
+    /* Responsive sidebar toggle */
+    const sbToggle = document.getElementById('sb-toggle');
+    if (window.innerWidth <= 768) sbToggle.style.display = '';
+
+    SP.loadCategories();
+    SP.show('overview');
+  },
+
+  /* ══════════════════════════════
+     API LAYER
+  ══════════════════════════════ */
+  async req(method, path, body, isFormData) {
+    const headers = { 'X-API-KEY': SP.cfg.key };
+    if (!isFormData) headers['Content-Type'] = 'application/json';
+    const opts = { method, headers };
+    if (body) opts.body = isFormData ? body : JSON.stringify(body);
+    const res = await fetch(SP.cfg.base + '/api/v1' + path, opts);
+    const ct = res.headers.get('Content-Type') || '';
+    const data = ct.includes('json') ? await res.json() : await res.text();
+    if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+    return data;
+  },
+  get:    (p)    => SP.req('GET',    p),
+  post:   (p, b) => SP.req('POST',   p, b),
+  put:    (p, b) => SP.req('PUT',    p, b),
+  patch:  (p, b) => SP.req('PATCH',  p, b),
+  del:    (p)    => SP.req('DELETE', p),
+
+  /* ══════════════════════════════
+     UI HELPERS
+  ══════════════════════════════ */
+  show(section) {
+    SP.state.section = section;
+    document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+    document.getElementById('section-'+section).classList.add('active');
+    document.querySelectorAll('.sb-item[data-section]').forEach(el=>el.classList.toggle('active', el.dataset.section===section));
+    const titles = {
+      overview:'Vue d\'ensemble', analytics:'Analytiques',
+      podcasts:'Podcasts', videos:'Vidéos', lives:'Lives',
+      comments:'Commentaires', messages:'Messages', subscribers:'Abonnés'
+    };
+    document.getElementById('page-title').textContent = titles[section] || section;
+    const loaders = {
+      overview: () => SP.sections.overview.load(),
+      analytics: () => SP.sections.analytics.load(),
+      podcasts: () => SP.sections.podcasts.load(),
+      videos: () => SP.sections.videos.load(),
+      lives: () => SP.sections.lives.load(),
+      comments: () => SP.sections.comments.load(),
+      messages: () => SP.sections.messages.load(),
+      subscribers: () => SP.sections.subscribers.load(),
+    };
+    if (loaders[section]) loaders[section]();
+    document.getElementById('sidebar').classList.remove('open');
+  },
+
+  refresh() {
+    const icon = document.getElementById('refresh-icon');
+    icon.classList.add('spin');
+    setTimeout(()=>icon.classList.remove('spin'), 800);
+    SP.show(SP.state.section);
+  },
+
+  openModal(id) {
+    document.getElementById(id).classList.add('open');
+  },
+  closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  },
+
+  confirm(title, msg, cb) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent   = msg;
+    const btn = document.getElementById('confirm-ok');
+    btn.onclick = () => { SP.closeModal('modal-confirm'); cb(); };
+    SP.openModal('modal-confirm');
+  },
+
+  toast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    const icons = { success:'check_circle', error:'error', info:'info' };
+    t.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">${icons[type]||'info'}</span>${msg}`;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(20px)';t.style.transition='.25s ease';setTimeout(()=>t.remove(),300)}, 3000);
+  },
+
+  /* ══════════════════════════════
+     CATEGORIES
+  ══════════════════════════════ */
+  async loadCategories() {
+    try {
+      const d = await SP.get('/categories/');
+      SP.state.categories = d.categories || [];
+      const sel = document.getElementById('ep-cat');
+      sel.innerHTML = '<option value="">— Aucune —</option>';
+      SP.state.categories.forEach(c => {
+        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name;
+        sel.appendChild(o);
+      });
+    } catch(e) { console.warn('Categories:', e); }
+  },
+
+  /* ══════════════════════════════
+     EPISODE MODAL
+  ══════════════════════════════ */
+  openEpisodeModal(ep, type) {
+    const isEdit = !!ep;
+    const t = type || (ep && ep.episode_type) || 'podcast';
+    document.getElementById('episode-modal-title').textContent = isEdit ? `Modifier : ${ep.title}` : (t==='video' ? 'Nouvelle vidéo' : 'Nouveau podcast');
+    document.getElementById('ep-id').value       = ep ? ep.id : '';
+    document.getElementById('ep-type').value     = t;
+    document.getElementById('ep-title').value    = ep ? ep.title : '';
+    document.getElementById('ep-desc').value     = ep ? (ep.description||'') : '';
+    document.getElementById('ep-host').value     = ep ? (ep.host||'') : 'The SafePlace by K';
+    document.getElementById('ep-duration').value = ep ? (ep.duration||'') : '';
+    document.getElementById('ep-audio').value    = ep ? (ep.audio_url||'') : '';
+    document.getElementById('ep-video').value    = ep ? (ep.video_url||'') : '';
+    document.getElementById('ep-published').checked = ep ? ep.is_published : true;
+    if (ep && ep.category_id) document.getElementById('ep-cat').value = ep.category_id;
+    else document.getElementById('ep-cat').value = '';
+
+    /* Color */
+    const color = ep ? (ep.cover_color||'#00261b') : '#00261b';
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color===color));
+
+    /* Show/hide sections */
+    document.getElementById('ep-audio-section').style.display = t==='podcast' ? '' : 'none';
+    document.getElementById('ep-video-section').style.display = t==='video'   ? '' : 'none';
+
+    /* Reset upload UI */
+    document.getElementById('ep-upload-progress').style.display='none';
+    document.getElementById('ep-file-name').style.display='none';
+    SP._pendingFile = null;
+
+    SP.openModal('modal-episode');
+  },
+
+  _pendingFile: null,
+  onFileSelect(input) {
+    const file = input.files ? input.files[0] : input;
+    if (!file) return;
+    SP._pendingFile = file;
+    const nameEl = document.getElementById('ep-file-name');
+    nameEl.textContent = file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)';
+    nameEl.style.display = 'block';
+  },
+
+  async saveEpisode() {
+    const id       = document.getElementById('ep-id').value;
+    const type     = document.getElementById('ep-type').value;
+    const title    = document.getElementById('ep-title').value.trim();
+    const desc     = document.getElementById('ep-desc').value.trim();
+    const host     = document.getElementById('ep-host').value.trim();
+    const duration = document.getElementById('ep-duration').value.trim();
+    const audioUrl = document.getElementById('ep-audio').value.trim();
+    const videoUrl = document.getElementById('ep-video').value.trim();
+    const catId    = document.getElementById('ep-cat').value;
+    const published= document.getElementById('ep-published').checked;
+    const color    = document.querySelector('.color-swatch.selected')?.dataset.color || '#00261b';
+
+    if (!title || !desc) { SP.toast('Titre et description obligatoires.', 'error'); return; }
+
+    const payload = {
+      title, description: desc, episode_type: type,
+      host: host || 'The SafePlace by K',
+      duration, cover_color: color,
+      audio_url: audioUrl, video_url: videoUrl,
+      category_id: catId || null, is_published: published,
+    };
+
+    const btn = document.getElementById('ep-save-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:16px">progress_activity</span> Enregistrement…';
+
+    try {
+      let saved;
+      if (id) {
+        saved = await SP.put(`/episodes/${id}/update/`, payload);
+      } else {
+        saved = await SP.post('/episodes/create/', payload);
+      }
+
+      /* Upload file if pending and we have an episode id */
+      const epId = id || saved.episode?.id;
+      if (SP._pendingFile && epId) {
+        await SP.uploadFile(epId, SP._pendingFile);
+      }
+
+      SP.toast(id ? 'Épisode mis à jour !' : 'Épisode créé !');
+      SP.closeModal('modal-episode');
+      if (type === 'podcast') SP.sections.podcasts.load();
+      else SP.sections.videos.load();
+    } catch(e) {
+      SP.toast('Erreur : ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;font-variation-settings:\'FILL\' 1">save</span> Enregistrer';
+    }
+  },
+
+  async uploadFile(epId, file) {
+    return new Promise((resolve, reject) => {
+      const bar  = document.getElementById('ep-upload-bar');
+      const prog = document.getElementById('ep-upload-progress');
+      const lbl  = document.getElementById('ep-upload-label');
+      prog.style.display = '';
+      const fd = new FormData();
+      fd.append('video_file', file);
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${SP.cfg.base}/api/v1/episodes/${epId}/upload/`);
+      xhr.setRequestHeader('X-API-KEY', SP.cfg.key);
+      xhr.upload.onprogress = e => {
+        const pct = e.total ? Math.round(e.loaded/e.total*100) : 0;
+        bar.style.width = pct + '%';
+        lbl.textContent = `Upload… ${pct}%`;
+      };
+      xhr.onload = () => {
+        if (xhr.status < 300) { resolve(JSON.parse(xhr.responseText)); }
+        else { reject(new Error('Upload échoué: ' + xhr.status)); }
+      };
+      xhr.onerror = () => reject(new Error('Erreur réseau lors de l\'upload'));
+      xhr.send(fd);
+    });
+  },
+
+  /* ══════════════════════════════
+     LIVE MODAL
+  ══════════════════════════════ */
+  openLiveModal(live) {
+    document.getElementById('live-modal-title').textContent = live ? 'Modifier le live' : 'Nouveau live';
+    document.getElementById('live-id').value    = live ? live.id   : '';
+    document.getElementById('live-title').value = live ? live.title : '';
+    document.getElementById('live-desc').value  = live ? (live.description||'') : '';
+    document.getElementById('live-url').value   = live ? (live.stream_url||'') : '';
+    document.getElementById('live-embed').value = live ? (live.embed_url||'') : '';
+    document.getElementById('live-platform').value = live ? live.platform : 'youtube';
+    document.getElementById('live-status').value   = live ? live.status   : 'scheduled';
+    SP.openModal('modal-live');
+  },
+
+  async saveLive() {
+    const id    = document.getElementById('live-id').value;
+    const title = document.getElementById('live-title').value.trim();
+    if (!title) { SP.toast('Titre obligatoire.', 'error'); return; }
+    const payload = {
+      title, description: document.getElementById('live-desc').value.trim(),
+      platform: document.getElementById('live-platform').value,
+      stream_url: document.getElementById('live-url').value.trim(),
+      embed_url: document.getElementById('live-embed').value.trim(),
+      status: document.getElementById('live-status').value,
+    };
+    try {
+      if (id) await SP.put(`/livestreams/${id}/update/`, payload);
+      else    await SP.post('/livestreams/create/', payload);
+      SP.toast(id ? 'Live mis à jour !' : 'Live créé !');
+      SP.closeModal('modal-live');
+      SP.sections.lives.load();
+    } catch(e) { SP.toast('Erreur : ' + e.message, 'error'); }
+  },
+
+  async deleteLive(id, title) {
+    SP.confirm('Supprimer le live', `Supprimer "${title}" ? Cette action est irréversible.`, async () => {
+      try { await SP.del(`/livestreams/${id}/delete/`); SP.toast('Live supprimé.'); SP.sections.lives.load(); }
+      catch(e) { SP.toast('Erreur : ' + e.message, 'error'); }
+    });
+  },
+
+  async updateLiveStatus(id, newStatus) {
+    try {
+      await SP.put(`/livestreams/${id}/update/`, { status: newStatus });
+      SP.toast(newStatus === 'live' ? '🔴 Live lancé sur le site !' : 'Statut mis à jour.');
+      SP.sections.lives.load();
+    } catch(e) { SP.toast('Erreur : ' + e.message, 'error'); }
+  },
+
+  /* ══════════════════════════════
+     SECTIONS
+  ══════════════════════════════ */
+  sections: {
+
+    /* ── OVERVIEW ── */
+    overview: {
+      async load() {
+        try {
+          const d = await SP.get('/dashboard-data/');
+          SP.sections.overview.renderStats(d.stats);
+          SP.sections.overview.renderRecentEpisodes(d.recent_data?.recent_episodes || []);
+          SP.sections.overview.renderRecentMessages(d.recent_data?.recent_messages || []);
+          /* Badges */
+          const unread = d.stats?.unread_messages || 0;
+          const badge = document.getElementById('badge-messages');
+          badge.textContent = unread; badge.style.display = unread ? '' : 'none';
+          const activeLives = d.stats?.active_lives || 0;
+          const lb = document.getElementById('badge-lives');
+          lb.textContent = activeLives; lb.style.display = activeLives ? '' : 'none';
+        } catch(e) { SP.toast('Erreur chargement overview: ' + e.message, 'error'); }
+      },
+      renderStats(s) {
+        if (!s) return;
+        const grid = document.getElementById('stats-grid');
+        const items = [
+          { label:'Épisodes', val: s.total_episodes, icon:'library_music', bg:'rgba(159,247,0,.12)', color:'var(--accent)', sub: `${s.total_episodes} au total` },
+          { label:'Abonnés', val: s.total_subscribers, icon:'group', bg:'rgba(56,189,248,.12)', color:'var(--info)' },
+          { label:'Messages', val: s.total_messages, icon:'mail', bg:'rgba(245,158,11,.12)', color:'var(--warn)', sub: `${s.unread_messages} non lus` },
+          { label:'Lives actifs', val: s.active_lives, icon:'sensors', bg:'rgba(255,68,85,.12)', color:'var(--danger)' },
+        ];
+        grid.innerHTML = items.map(i=>`
+          <div class="stat-card">
+            <div class="stat-icon" style="background:${i.bg}">
+              <span class="material-symbols-outlined" style="color:${i.color};font-size:20px;font-variation-settings:'FILL' 1">${i.icon}</span>
+            </div>
+            <div class="stat-val" style="color:${i.color}">${i.val ?? '—'}</div>
+            <div class="stat-label">${i.label}</div>
+            ${i.sub ? `<div class="stat-sub"><span>${i.sub}</span></div>` : ''}
+          </div>`).join('');
+      },
+      renderRecentEpisodes(eps) {
+        const el = document.getElementById('recent-episodes-body');
+        if (!eps.length) { el.innerHTML='<div class="empty"><p>Aucun épisode</p></div>'; return; }
+        el.innerHTML = `<table><thead><tr><th>Titre</th><th>Type</th><th>Statut</th></tr></thead><tbody>
+          ${eps.map(e=>`<tr>
+            <td class="td-truncate" style="max-width:180px">${e.title}</td>
+            <td><span class="badge ${e.episode_type==='video'?'badge-blue':'badge-gray'}">${e.episode_type}</span></td>
+            <td><span class="badge ${e.status==='published'?'badge-green':'badge-yellow'}">${e.status==='published'?'Publié':'Brouillon'}</span></td>
+          </tr>`).join('')}
+        </tbody></table>`;
+      },
+      renderRecentMessages(msgs) {
+        const el = document.getElementById('recent-messages-body');
+        if (!msgs.length) { el.innerHTML='<div class="empty"><p>Aucun message</p></div>'; return; }
+        el.innerHTML = msgs.map(m=>`
+          <div class="msg-item ${!m.read?'msg-unread':''}">
+            <div class="msg-avatar">${(m.name||'?')[0].toUpperCase()}</div>
+            <div class="msg-body">
+              <div class="msg-from">${m.name||'Anonyme'}${!m.read?'<span class="badge badge-green" style="font-size:.65rem">nouveau</span>':''}</div>
+              <div class="msg-subject">${m.subject||'(sans objet)'}</div>
+            </div>
+            <div class="msg-date">${m.created_at}</div>
+          </div>`).join('');
+      },
+    },
+
+    /* ── ANALYTICS ── */
+    analytics: {
+      async load() {
+        try {
+          const d = await SP.get('/analytics/');
+          document.getElementById('analytics-stats').innerHTML = [
+            { label:'Vues totales', val: d.total_views, icon:'visibility', color:'var(--accent)' },
+            { label:'Épisodes', val: d.total_episodes, icon:'library_music', color:'var(--info)' },
+            { label:'Abonnés', val: d.total_subscribers, icon:'group', color:'var(--warn)' },
+            { label:'Messages', val: d.total_messages, icon:'mail', color:'var(--muted)' },
+          ].map(i=>`<div class="stat-card"><div class="stat-icon" style="background:rgba(255,255,255,.06)">
+            <span class="material-symbols-outlined" style="color:${i.color};font-size:20px;font-variation-settings:'FILL' 1">${i.icon}</span></div>
+            <div class="stat-val" style="color:${i.color}">${i.val??'—'}</div><div class="stat-label">${i.label}</div></div>`).join('');
+
+          const te = document.getElementById('top-episodes-body');
+          te.innerHTML = (d.top_episodes||[]).length
+            ? `<table><thead><tr><th>Titre</th><th>Type</th><th>Vues</th></tr></thead><tbody>${
+              d.top_episodes.map(e=>`<tr>
+                <td class="td-truncate">${e.title}</td>
+                <td><span class="badge ${e.type==='video'?'badge-blue':'badge-gray'}">${e.type}</span></td>
+                <td><strong style="color:var(--accent)">${e.views}</strong></td></tr>`).join('')
+            }</tbody></table>`
+            : '<div class="empty"><span class="material-symbols-outlined">bar_chart</span><p>Pas de données</p></div>';
+
+          const cb = document.getElementById('categories-body');
+          cb.innerHTML = (d.categories||[]).length
+            ? `<table><thead><tr><th>Catégorie</th><th>Épisodes</th></tr></thead><tbody>${
+              d.categories.map(c=>`<tr><td>${c.name}</td><td><strong style="color:var(--accent)">${c.count}</strong></td></tr>`).join('')
+            }</tbody></table>`
+            : '<div class="empty"><span class="material-symbols-outlined">category</span><p>Pas de catégories</p></div>';
+        } catch(e) { SP.toast('Erreur analytiques: ' + e.message, 'error'); }
+      }
+    },
+
+    /* ── PODCASTS ── */
+    podcasts: {
+      _timer: null,
+      setFilter(f) { SP.state.podcastFilter=f; SP.state.podcastPage=1; SP.sections.podcasts.load(); },
+      search(q) {
+        clearTimeout(SP.sections.podcasts._timer);
+        SP.sections.podcasts._timer = setTimeout(()=>{ SP.state.podcastSearch=q; SP.state.podcastPage=1; SP.sections.podcasts.load(); }, 350);
+      },
+      async load() {
+        const { podcastPage: page, podcastFilter: filter, podcastSearch: search } = SP.state;
+        const qs = new URLSearchParams({ type:'podcast', page, page_size:15 });
+        if (filter) qs.set('status', filter);
+        if (search) qs.set('search', search);
+        document.getElementById('podcasts-body').innerHTML = '<div class="loading"><span class="material-symbols-outlined spin">progress_activity</span> Chargement…</div>';
+        try {
+          const d = await SP.get(`/episodes/?${qs}`);
+          document.getElementById('podcast-count').textContent = `Podcasts (${d.pagination?.total||0})`;
+          SP.sections.podcasts.render(d.episodes || [], d.pagination);
+        } catch(e) { SP.toast('Erreur podcasts: ' + e.message, 'error'); }
+      },
+      render(eps, pag) {
+        const el = document.getElementById('podcasts-body');
+        if (!eps.length) { el.innerHTML='<div class="empty"><span class="material-symbols-outlined">headphones</span><p>Aucun podcast trouvé</p></div>'; document.getElementById('podcasts-pagination').innerHTML=''; return; }
+        el.innerHTML = `<table><thead><tr><th>Titre</th><th>Catégorie</th><th>Durée</th><th>Vues</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
+          ${eps.map(e=>`<tr>
+            <td>
+              <div style="font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.title}</div>
+              <div style="font-size:.75rem;color:var(--muted);margin-top:2px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.description||''}</div>
+            </td>
+            <td><span class="badge badge-gray">${e.category||'—'}</span></td>
+            <td>${e.duration||'—'}</td>
+            <td>${e.views||0}</td>
+            <td><span class="badge ${e.is_published?'badge-green':'badge-yellow'}">${e.is_published?'Publié':'Brouillon'}</span></td>
+            <td class="td-actions">
+              <button class="btn btn-ghost btn-sm btn-icon" title="Modifier" onclick='SP.openEpisodeModal(${JSON.stringify(e)}, "podcast")'><span class="material-symbols-outlined" style="font-size:16px">edit</span></button>
+              <button class="btn btn-ghost btn-sm btn-icon" title="Toggle publié" onclick="SP.togglePublish(${e.id},${e.is_published},'podcast')"><span class="material-symbols-outlined" style="font-size:16px">${e.is_published?'unpublished':'publish'}</span></button>
+              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" onclick="SP.deleteEpisode(${e.id},'${e.title.replace(/'/g,"\\'")}','podcast')"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button>
+            </td>
+          </tr>`).join('')}
+        </tbody></table>`;
+        SP.renderPagination('podcasts-pagination', pag, p=>{SP.state.podcastPage=p;SP.sections.podcasts.load();});
+      },
+    },
+
+    /* ── VIDEOS ── */
+    videos: {
+      _timer: null,
+      setFilter(f) { SP.state.videoFilter=f; SP.state.videoPage=1; SP.sections.videos.load(); },
+      search(q) {
+        clearTimeout(SP.sections.videos._timer);
+        SP.sections.videos._timer = setTimeout(()=>{ SP.state.videoSearch=q; SP.state.videoPage=1; SP.sections.videos.load(); }, 350);
+      },
+      async load() {
+        const { videoPage: page, videoFilter: filter, videoSearch: search } = SP.state;
+        const qs = new URLSearchParams({ type:'video', page, page_size:15 });
+        if (filter) qs.set('status', filter);
+        if (search) qs.set('search', search);
+        document.getElementById('videos-body').innerHTML = '<div class="loading"><span class="material-symbols-outlined spin">progress_activity</span> Chargement…</div>';
+        try {
+          const d = await SP.get(`/episodes/?${qs}`);
+          document.getElementById('video-count').textContent = `Vidéos (${d.pagination?.total||0})`;
+          SP.sections.videos.render(d.episodes || [], d.pagination);
+        } catch(e) { SP.toast('Erreur vidéos: ' + e.message, 'error'); }
+      },
+      render(eps, pag) {
+        const el = document.getElementById('videos-body');
+        if (!eps.length) { el.innerHTML='<div class="empty"><span class="material-symbols-outlined">smart_display</span><p>Aucune vidéo trouvée</p></div>'; document.getElementById('videos-pagination').innerHTML=''; return; }
+        el.innerHTML = `<table><thead><tr><th>Titre</th><th>Catégorie</th><th>Durée</th><th>Vues</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
+          ${eps.map(e=>`<tr>
+            <td>
+              <div style="font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.title}</div>
+              <div style="font-size:.75rem;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${e.video_url?'<a href="'+e.video_url+'" target="_blank" style="color:var(--info)">Voir source</a>':''}</div>
+            </td>
+            <td><span class="badge badge-gray">${e.category||'—'}</span></td>
+            <td>${e.duration||'—'}</td>
+            <td>${e.views||0}</td>
+            <td><span class="badge ${e.is_published?'badge-green':'badge-yellow'}">${e.is_published?'Publiée':'Brouillon'}</span></td>
+            <td class="td-actions">
+              <button class="btn btn-ghost btn-sm btn-icon" title="Modifier" onclick='SP.openEpisodeModal(${JSON.stringify(e)}, "video")'><span class="material-symbols-outlined" style="font-size:16px">edit</span></button>
+              <button class="btn btn-ghost btn-sm btn-icon" title="Toggle publié" onclick="SP.togglePublish(${e.id},${e.is_published},'video')"><span class="material-symbols-outlined" style="font-size:16px">${e.is_published?'unpublished':'publish'}</span></button>
+              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" onclick="SP.deleteEpisode(${e.id},'${e.title.replace(/'/g,"\\'")}','video')"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button>
+            </td>
+          </tr>`).join('')}
+        </tbody></table>`;
+        SP.renderPagination('videos-pagination', pag, p=>{SP.state.videoPage=p;SP.sections.videos.load();});
+      },
+    },
+
+    /* ── LIVES ── */
+    lives: {
+      _all: [],
+      setFilter(f) { SP.state.liveFilter=f; SP.sections.lives.applyFilter(); },
+      async load() {
+        document.getElementById('lives-grid').innerHTML = '<div class="loading"><span class="material-symbols-outlined spin">progress_activity</span> Chargement…</div>';
+        try {
+          const d = await SP.get('/livestreams/');
+          SP.sections.lives._all = d.livestreams || [];
+          SP.sections.lives.applyFilter();
+        } catch(e) { SP.toast('Erreur lives: ' + e.message, 'error'); }
+      },
+      applyFilter() {
+        const filter = SP.state.liveFilter;
+        const lives = filter ? SP.sections.lives._all.filter(l=>l.status===filter) : SP.sections.lives._all;
+        SP.sections.lives.render(lives);
+      },
+      render(lives) {
+        const grid = document.getElementById('lives-grid');
+        if (!lives.length) { grid.innerHTML='<div class="empty" style="grid-column:1/-1"><span class="material-symbols-outlined">sensors</span><p>Aucun live</p></div>'; return; }
+        const platforms = { youtube:{bg:'#ff0000',color:'#fff',label:'YT'}, facebook:{bg:'#1877f2',color:'#fff',label:'FB'}, instagram:{bg:'#e1306c',color:'#fff',label:'IG'}, twitch:{bg:'#9147ff',color:'#fff',label:'TW'}, other:{bg:'#5a7a5c',color:'#fff',label:'•'} };
+        const statusBadge = {
+          live:`<span class="badge badge-red"><div class="dot dot-yellow"></div>EN DIRECT</span>`,
+          scheduled:`<span class="badge badge-blue">Programmé</span>`,
+          ended:`<span class="badge badge-gray">Terminé</span>`,
+        };
+        grid.innerHTML = lives.map(l=>{
+          const p = platforms[l.platform] || platforms.other;
+          const isLive = l.status==='live';
+          return `<div class="live-card ${isLive?'is-live':''}">
+            <div class="live-card-header">
+              <div class="live-card-platform">
+                <div class="live-platform-icon" style="background:${p.bg};color:${p.color}">${p.label}</div>
+                <div>
+                  <div class="live-card h3" style="font-size:.95rem;font-weight:700">${l.title}</div>
+                  ${statusBadge[l.status]||''}
+                </div>
+              </div>
+            </div>
+            ${l.description?`<p>${l.description}</p>`:''}
+            ${l.stream_url?`<div class="live-card-url"><span class="material-symbols-outlined" style="font-size:15px">link</span><a href="${l.stream_url}" target="_blank" style="color:var(--info);word-break:break-all;font-size:.73rem">${l.stream_url.substring(0,55)}${l.stream_url.length>55?'…':''}</a></div>`:''}
+            <div class="live-card-actions">
+              ${!isLive ? `<button class="btn btn-danger btn-sm" onclick="SP.updateLiveStatus(${l.id},'live')"><span class="material-symbols-outlined" style="font-size:15px;font-variation-settings:'FILL' 1">sensors</span>Lancer sur le site</button>` : ''}
+              ${isLive  ? `<button class="btn btn-warn btn-sm" onclick="SP.updateLiveStatus(${l.id},'ended')"><span class="material-symbols-outlined" style="font-size:15px">stop_circle</span>Arrêter le live</button>` : ''}
+              ${!isLive && l.status!=='scheduled' ? '' : `<button class="btn btn-ghost btn-sm" onclick="SP.updateLiveStatus(${l.id},'scheduled')"><span class="material-symbols-outlined" style="font-size:15px">schedule</span>Programmer</button>`}
+              <button class="btn btn-ghost btn-sm btn-icon" onclick='SP.openLiveModal(${JSON.stringify(l)})'><span class="material-symbols-outlined" style="font-size:15px">edit</span></button>
+              <button class="btn btn-danger btn-sm btn-icon" onclick="SP.deleteLive(${l.id},'${l.title.replace(/'/g,"\\'")}')"><span class="material-symbols-outlined" style="font-size:15px">delete</span></button>
+            </div>
+          </div>`;
+        }).join('');
+      },
+    },
+
+    /* ── COMMENTS ── */
+    comments: {
+      _timer: null,
+      setFilter(f) { SP.state.commentFilter=f; SP.sections.comments.load(); },
+      search(q) {
+        clearTimeout(SP.sections.comments._timer);
+        SP.sections.comments._timer = setTimeout(()=>{ SP.state.commentSearch=q; SP.sections.comments.load(); }, 350);
+      },
+      async load() {
+        const qs = new URLSearchParams();
+        if (SP.state.commentFilter) qs.set('approved', SP.state.commentFilter);
+        if (SP.state.commentSearch) qs.set('search', SP.state.commentSearch);
+        document.getElementById('comments-body').innerHTML='<div class="loading"><span class="material-symbols-outlined spin">progress_activity</span></div>';
+        try {
+          const d = await SP.get(`/comments/?${qs}`);
+          const stats = d.stats||{};
+          document.getElementById('comments-count').textContent = `Commentaires (${stats.total||0} total · ${stats.pending||0} en attente)`;
+          const badge = document.getElementById('badge-comments');
+          badge.textContent = stats.pending||0; badge.style.display = (stats.pending||0)>0?'':'none';
+          const items = d.comments||[];
+          if (!items.length) { document.getElementById('comments-body').innerHTML='<div class="empty"><span class="material-symbols-outlined">comment</span><p>Aucun commentaire</p></div>'; return; }
+          document.getElementById('comments-body').innerHTML = `<table><thead><tr><th>Auteur</th><th>Épisode</th><th>Commentaire</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead><tbody>
+            ${items.map(c=>`<tr>
+              <td><div style="font-weight:600">${c.author_name}</div><div style="font-size:.73rem;color:var(--muted)">${c.author_email||''}</div></td>
+              <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem;color:var(--muted)">${c.episode_title}</td>
+              <td><div style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem">${c.content}</div></td>
+              <td style="font-size:.75rem;color:var(--muted)">${c.created_at}</td>
+              <td><span class="badge ${c.is_approved?'badge-green':'badge-yellow'}">${c.is_approved?'Approuvé':'En attente'}</span></td>
+              <td class="td-actions">
+                <button class="btn ${c.is_approved?'btn-warn':'btn-success'} btn-sm btn-icon" title="${c.is_approved?'Désapprouver':'Approuver'}" onclick="SP.toggleComment(${c.id})">
+                  <span class="material-symbols-outlined" style="font-size:16px">${c.is_approved?'thumb_down':'thumb_up'}</span>
+                </button>
+                <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" onclick="SP.deleteComment(${c.id})">
+                  <span class="material-symbols-outlined" style="font-size:16px">delete</span>
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody></table>`;
+        } catch(e) { SP.toast('Erreur commentaires: ' + e.message, 'error'); }
+      },
+    },
+
+    /* ── MESSAGES ── */
+    messages: {
+      setFilter(f) { SP.state.messageFilter=f; SP.sections.messages.load(); },
+      async markAllRead() {
+        try { await SP.post('/messages/mark-all-read/'); SP.toast('Tous les messages marqués comme lus.'); SP.sections.messages.load(); }
+        catch(e) { SP.toast('Erreur: ' + e.message, 'error'); }
+      },
+      async load() {
+        const qs = SP.state.messageFilter ? `?status=${SP.state.messageFilter}` : '';
+        document.getElementById('messages-body').innerHTML='<div class="loading"><span class="material-symbols-outlined spin">progress_activity</span></div>';
+        try {
+          const d = await SP.get(`/messages/${qs}`);
+          const stats = d.stats||{};
+          const badge = document.getElementById('badge-messages');
+          badge.textContent = stats.unread||0; badge.style.display=(stats.unread||0)>0?'':'none';
+          const msgs = d.messages||[];
+          if (!msgs.length) { document.getElementById('messages-body').innerHTML='<div class="empty"><span class="material-symbols-outlined">mail</span><p>Aucun message</p></div>'; return; }
+          document.getElementById('messages-body').innerHTML = msgs.map(m=>`
+            <div class="msg-item ${!m.read?'msg-unread':''}" onclick="SP.sections.messages.view(${JSON.stringify(m).replace(/'/g,'&#39;')})">
+              ${!m.read?'<div class="msg-unread-dot"></div>':'<div style="width:7px"></div>'}
+              <div class="msg-avatar">${(m.name||'?')[0].toUpperCase()}</div>
+              <div class="msg-body">
+                <div class="msg-from">${m.name||'Anonyme'} <span style="font-size:.75rem;color:var(--muted);font-weight:400">&lt;${m.email||''}&gt;</span></div>
+                <div class="msg-subject">${m.subject||'(sans objet)'}</div>
+              </div>
+              <div class="msg-date">${m.created_at}</div>
+            </div>`).join('');
+        } catch(e) { SP.toast('Erreur messages: ' + e.message, 'error'); }
+      },
+      async view(m) {
+        document.getElementById('msg-modal-from').textContent    = m.name||'Anonyme';
+        document.getElementById('msg-modal-email').textContent   = m.email||'';
+        document.getElementById('msg-modal-date').textContent    = m.created_at;
+        document.getElementById('msg-modal-subject').textContent = m.subject||'(sans objet)';
+        document.getElementById('msg-modal-body').textContent    = m.message||'';
+        document.getElementById('msg-modal-reply-btn').href      = `mailto:${m.email}?subject=Re: ${encodeURIComponent(m.subject||'')}`;
+        document.getElementById('msg-modal-delete-btn').onclick  = () => { SP.closeModal('modal-message'); SP.sections.messages.del(m.id); };
+        SP.openModal('modal-message');
+        if (!m.read) {
+          try { await SP.post(`/messages/${m.id}/read/`); SP.sections.messages.load(); }
+          catch(e) {}
+        }
+      },
+      async del(id) {
+        SP.confirm('Supprimer le message', 'Supprimer définitivement ce message ?', async () => {
+          try { await SP.del(`/messages/${id}/delete/`); SP.toast('Message supprimé.'); SP.sections.messages.load(); }
+          catch(e) { SP.toast('Erreur: ' + e.message, 'error'); }
+        });
+      },
+    },
+
+    /* ── SUBSCRIBERS ── */
+    subscribers: {
+      _data: [],
+      async load() {
+        document.getElementById('subscribers-body').innerHTML='<div class="loading"><span class="material-symbols-outlined spin">progress_activity</span></div>';
+        try {
+          const d = await SP.get('/subscriptions/');
+          SP.sections.subscribers._data = d.subscriptions||[];
+          const stats = d.stats||{};
+          document.getElementById('sub-count').textContent = `Abonnés (${stats.total||0} · ${stats.active||0} actifs)`;
+          const subs = d.subscriptions||[];
+          if (!subs.length) { document.getElementById('subscribers-body').innerHTML='<div class="empty"><span class="material-symbols-outlined">group</span><p>Aucun abonné</p></div>'; return; }
+          document.getElementById('subscribers-body').innerHTML = `<table><thead><tr><th>Nom</th><th>Email</th><th>Podcasts</th><th>Vidéos</th><th>Lives</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+            ${subs.map(s=>`<tr>
+              <td style="font-weight:600">${s.first_name||''} ${s.last_name||''}</td>
+              <td style="font-size:.82rem;color:var(--muted)">${s.email}</td>
+              <td>${s.notify_podcasts?'<span class="badge badge-green">✓</span>':'<span class="badge badge-gray">—</span>'}</td>
+              <td>${s.notify_videos?'<span class="badge badge-green">✓</span>':'<span class="badge badge-gray">—</span>'}</td>
+              <td>${s.notify_live?'<span class="badge badge-green">✓</span>':'<span class="badge badge-gray">—</span>'}</td>
+              <td><span class="badge ${s.is_active?'badge-green':'badge-red'}">${s.is_active?'Actif':'Inactif'}</span></td>
+              <td style="font-size:.75rem;color:var(--muted)">${s.created_at}</td>
+            </tr>`).join('')}
+          </tbody></table>`;
+        } catch(e) { SP.toast('Erreur abonnés: ' + e.message, 'error'); }
+      },
+      exportCsv() {
+        const subs = SP.sections.subscribers._data;
+        if (!subs.length) { SP.toast('Pas de données à exporter.', 'info'); return; }
+        const header = 'Prénom,Nom,Email,Podcasts,Vidéos,Lives,Actif,Date';
+        const rows = subs.map(s => [s.first_name,s.last_name,s.email,s.notify_podcasts,s.notify_videos,s.notify_live,s.is_active,s.created_at].join(','));
+        const csv = [header,...rows].join('\n');
+        const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+        a.download = 'safeplace-abonnes.csv'; a.click();
+        SP.toast('Export CSV téléchargé.', 'success');
+      },
+    },
+  },
+
+  /* ══════════════════════════════
+     EPISODE ACTIONS
+  ══════════════════════════════ */
+  async togglePublish(id, current, type) {
+    try {
+      await SP.patch(`/episodes/${id}/update/`, { is_published: !current });
+      SP.toast(current ? 'Épisode mis en brouillon.' : 'Épisode publié !');
+      if (type==='podcast') SP.sections.podcasts.load(); else SP.sections.videos.load();
+    } catch(e) { SP.toast('Erreur: ' + e.message, 'error'); }
+  },
+
+  deleteEpisode(id, title, type) {
+    SP.confirm('Supprimer l\'épisode', `Supprimer "${title}" ? Cette action est irréversible.`, async () => {
+      try {
+        await SP.del(`/episodes/${id}/delete/`);
+        SP.toast('Épisode supprimé.');
+        if (type==='podcast') SP.sections.podcasts.load(); else SP.sections.videos.load();
+      } catch(e) { SP.toast('Erreur: ' + e.message, 'error'); }
+    });
+  },
+
+  /* ══════════════════════════════
+     COMMENT ACTIONS
+  ══════════════════════════════ */
+  async toggleComment(id) {
+    try {
+      await SP.post(`/comments/${id}/approve/`);
+      SP.toast('Statut du commentaire mis à jour.');
+      SP.sections.comments.load();
+    } catch(e) { SP.toast('Erreur: ' + e.message, 'error'); }
+  },
+
+  deleteComment(id) {
+    SP.confirm('Supprimer le commentaire', 'Supprimer définitivement ce commentaire ?', async () => {
+      try { await SP.del(`/comments/${id}/delete/`); SP.toast('Commentaire supprimé.'); SP.sections.comments.load(); }
+      catch(e) { SP.toast('Erreur: ' + e.message, 'error'); }
+    });
+  },
+
+  /* ══════════════════════════════
+     PAGINATION HELPER
+  ══════════════════════════════ */
+  renderPagination(containerId, pag, cb) {
+    const el = document.getElementById(containerId);
+    if (!pag || pag.pages <= 1) { el.innerHTML=''; return; }
+    const { page, pages } = pag;
+    let html = '';
+    if (page > 1) html += `<button class="btn btn-ghost" onclick="(${cb.toString()})(${page-1})">‹ Précédent</button>`;
+    html += `<span>Page ${page} / ${pages}</span>`;
+    if (page < pages) html += `<button class="btn btn-ghost" onclick="(${cb.toString()})(${page+1})">Suivant ›</button>`;
+    el.innerHTML = html;
+  },
+
+};
+
+/* ═══ INIT ═══ */
+document.addEventListener('DOMContentLoaded', () => SP.boot());
+
+/* Close modals on overlay click */
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) SP.closeModal(o.id); });
+});
+
+/* Enter key on login */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') SP.login();
+});
+</script>
+</body>
+</html>

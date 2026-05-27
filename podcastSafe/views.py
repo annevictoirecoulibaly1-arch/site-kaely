@@ -1,0 +1,420 @@
+﻿from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.text import slugify
+from django.contrib.auth import get_user_model, login
+import os
+import json
+
+from .models import Episode, LiveStream, Category, Subscription, ContactMessage, Comment
+from .auth import owner_required, subscriber_required
+
+
+User = get_user_model()
+
+from django.http import Http404, HttpResponse
+import mimetypes
+from urllib.parse import urlparse
+
+
+
+def home(request):
+    published = Episode.objects.filter(is_published=True)
+    latest_episodes = published.filter(episode_type='podcast')[:6]
+    latest_videos = published.filter(episode_type='video')[:4]
+    live_streams = LiveStream.objects.filter(status='live')[:4]
+    featured = published.first()
+    categories = Category.objects.all()
+    category_ids_by_slug = {}
+    for cat in categories:
+        category_ids_by_slug[slugify(cat.name)] = str(cat.id)
+    context = {
+        'latest_episodes': latest_episodes,
+        'latest_videos': latest_videos,
+        'live_streams': live_streams,
+        'featured': featured,
+        'categories': categories,
+        'category_ids_by_slug': category_ids_by_slug,
+    }
+    return render(request, 'Accueil.html', context)
+
+
+def podcasts(request):
+    episodes = Episode.objects.filter(is_published=True, episode_type='podcast')
+    categories = Category.objects.filter(for_type__in=['podcast', 'all'])
+    selected_cat = request.GET.get('categorie')
+    if selected_cat:
+        if str(selected_cat).isdigit():
+            episodes_filtered = episodes.filter(category__id=selected_cat)
+        else:
+            slug = slugify(str(selected_cat).replace('_', '-'))
+            all_cats = Category.objects.all()
+            cat_ids = [c.id for c in all_cats if slugify(c.name) == slug]
+            episodes_filtered = episodes.filter(category_id__in=cat_ids) if cat_ids else episodes.none()
+    else:
+        episodes_filtered = episodes
+    context = {'episodes': episodes_filtered, 'categories': categories, 'selected_cat': selected_cat}
+    return render(request, 'podcasts.html', context)
+
+
+def videos(request):
+    episodes = Episode.objects.filter(is_published=True, episode_type='video')
+    categories = Category.objects.filter(for_type__in=['video', 'all'])
+    selected_cat = request.GET.get('categorie')
+    if selected_cat:
+        if str(selected_cat).isdigit():
+            episodes_filtered = episodes.filter(category__id=selected_cat)
+        else:
+            slug = slugify(str(selected_cat).replace('_', '-'))
+            all_cats = Category.objects.all()
+            cat_ids = [c.id for c in all_cats if slugify(c.name) == slug]
+            episodes_filtered = episodes.filter(category_id__in=cat_ids) if cat_ids else episodes.none()
+    else:
+        episodes_filtered = episodes
+    context = {'episodes': episodes_filtered, 'categories': categories, 'selected_cat': selected_cat}
+    return render(request, 'videos.html', context)
+
+
+def podcast_detail(request, pk):
+    episode = get_object_or_404(Episode, pk=pk, is_published=True, episode_type='podcast')
+    similar = (
+        Episode.objects.filter(
+            is_published=True,
+            episode_type='podcast',
+            category=episode.category,
+        )
+        .exclude(pk=pk)[:3]
+    )
+    comments = episode.comments.filter(is_approved=True)
+    context = {
+        'episode': episode,
+        'similar_episodes': similar,
+        'youtube_embed_url': episode.get_youtube_embed_url(),
+        'comments': comments,
+        'comment_count': comments.count(),
+    }
+    return render(request, 'podcast_detail.html', context)
+
+
+def video_detail(request, pk):
+    episode = get_object_or_404(Episode, pk=pk, is_published=True, episode_type='video')
+    similar = (
+        Episode.objects.filter(
+            is_published=True,
+            episode_type='video',
+            category=episode.category,
+        )
+        .exclude(pk=pk)[:3]
+    )
+    comments = episode.comments.filter(is_approved=True)
+    # Vérifie si le fichier local existe vraiment sur le disque
+    file_exists = False
+    if episode.video_file:
+        try:
+            file_exists = os.path.exists(episode.video_file.path)
+        except Exception:
+            pass
+    has_downloadable = file_exists or bool((episode.video_url or '').strip())
+    context = {
+        'episode': episode,
+        'similar_episodes': similar,
+        'youtube_embed_url': episode.get_youtube_embed_url(),
+        'comments': comments,
+        'comment_count': comments.count(),
+        'has_downloadable': has_downloadable,
+    }
+    return render(request, 'video_detail.html', context)
+
+
+def live(request):
+    streams = LiveStream.objects.filter(status='live')
+    scheduled = LiveStream.objects.filter(status='scheduled')
+    context = {'streams': streams, 'scheduled': scheduled}
+    return render(request, 'live.html', context)
+
+
+@owner_required
+def dashboard(request):
+    """Dashboard accessible uniquement au propriÃ©taire du site"""
+    episodes = Episode.objects.all()[:10]
+    total_episodes = Episode.objects.count()
+    total_views = sum(e.views_count for e in Episode.objects.all())
+    total_subscribers = Subscription.objects.filter(is_active=True).count()
+    recent_subscribers = Subscription.objects.filter(is_active=True).order_by('-created_at')[:5]
+
+    context = {
+        'episodes': episodes,
+        'total_episodes': total_episodes,
+        'total_views': total_views,
+        'total_subscribers': total_subscribers,
+        'recent_subscribers': recent_subscribers,
+    }
+    return render(request, 'dashboard.html', context)
+
+
+@owner_required
+def publish_episode(request):
+    """CrÃ©er ou Ã©diter un Ã©pisode"""
+    if request.method == 'POST':
+        try:
+            title = (request.POST.get('title') or '').strip()
+            description = (request.POST.get('description') or '').strip()
+            episode_type = request.POST.get('episode_type', 'podcast')
+            if episode_type not in ('podcast', 'video'):
+                episode_type = 'podcast'
+            category_id = request.POST.get('category')
+            audio_url = (request.POST.get('audio_url') or '').strip()
+            video_url = (request.POST.get('video_url') or '').strip()
+            duration = (request.POST.get('duration') or '').strip()
+            cover_color = request.POST.get('cover_color', '#00261b') or '#00261b'
+
+            if not title or not description:
+                raise ValueError('Le titre et la description sont obligatoires.')
+            if episode_type == 'podcast' and not audio_url:
+                raise ValueError('Pour un podcast, renseignez une URL audio (fichier MP3 ou hÃ©bergeur).')
+            if episode_type == 'video' and not video_url:
+                raise ValueError('Pour une vidÃ©o, renseignez une URL (YouTube, lien direct, etc.).')
+
+            category = Category.objects.get(id=category_id) if category_id else None
+
+            episode = Episode(
+                title=title,
+                description=description,
+                episode_type=episode_type,
+                category=category,
+                audio_url=audio_url,
+                video_url=video_url,
+                duration=duration,
+                cover_color=cover_color,
+                is_published=True,
+            )
+            episode.save()
+
+            if episode.episode_type == 'video':
+                return redirect('video_detail', pk=episode.id)
+            return redirect('podcast_detail', pk=episode.id)
+        except Exception as e:
+            context = {'error': str(e), 'categories': Category.objects.all()}
+            return render(request, 'publish_episode.html', context)
+
+    categories = Category.objects.all()
+    context = {'categories': categories}
+    return render(request, 'publish_episode.html', context)
+
+
+def _parse_post_or_json(request):
+    """Return a dict from JSON body or form POST."""
+    ct = (request.META.get('CONTENT_TYPE') or '').lower()
+    if 'application/json' in ct and request.body:
+        try:
+            return json.loads(request.body.decode('utf-8'))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return {}
+    return request.POST
+
+
+@owner_required
+def manage_live_streams(request):
+    """GÃ©rer les Live Streams"""
+    if request.method == 'POST':
+        try:
+            data = _parse_post_or_json(request)
+            title = (data.get('title') or '').strip()
+            description = (data.get('description') or '').strip()
+            platform = (data.get('platform') or '').strip()
+            stream_url = (data.get('stream_url') or '').strip()
+            embed_url = (data.get('embed_url') or '').strip()
+            status = (data.get('status') or 'scheduled').strip()
+
+            if not title:
+                return JsonResponse({'success': False, 'error': 'Le titre est obligatoire.'})
+            if not platform:
+                return JsonResponse({'success': False, 'error': 'Choisissez une plateforme.'})
+
+            live_stream = LiveStream(
+                title=title,
+                description=description,
+                platform=platform,
+                stream_url=stream_url,
+                embed_url=embed_url,
+                status=status,
+            )
+            live_stream.save()
+
+            return JsonResponse({'success': True, 'message': 'Live Stream crÃ©Ã© avec succÃ¨s'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    live_streams = LiveStream.objects.all()
+    context = {
+        'live_streams': live_streams,
+        'platforms': LiveStream._meta.get_field('platform').choices,
+        'statuses': LiveStream._meta.get_field('status').choices,
+    }
+    return render(request, 'manage_live_streams.html', context)
+
+
+def _parse_bool(value):
+    return str(value).lower() in ('true', '1', 'yes', 'on', 'checked')
+
+
+def register(request):
+    # Public registration has been disabled.
+    return redirect('home')
+
+
+def about(request):
+    return render(request, 'about.html')
+
+
+def _sanitize_header(value: str, max_len: int = 200) -> str:
+    """Supprime les retours à la ligne pour prévenir l'injection d'en-têtes email."""
+    import re
+    return re.sub(r'[\r\n\t]', ' ', str(value or '')).strip()[:max_len]
+
+
+def contact(request):
+    """Traiter les demandes de contact"""
+    success = False
+    error = None
+
+    if request.method == 'POST':
+        try:
+            first_name   = _sanitize_header(request.POST.get('first_name', ''))
+            last_name    = _sanitize_header(request.POST.get('last_name', ''))
+            email        = _sanitize_header(request.POST.get('email', ''))
+            subject      = _sanitize_header(request.POST.get('subject', 'Question générale'))
+            message_text = request.POST.get('message', '')[:5000]
+
+            if not email or not message_text:
+                error = "Veuillez remplir tous les champs obligatoires"
+            else:
+                full_name = f"{first_name} {last_name}".strip()
+
+                ContactMessage.objects.create(
+                    name=full_name,
+                    email=email,
+                    subject=subject,
+                    message=message_text,
+                )
+
+                try:
+                    send_mail(
+                        f'Nouveau message de contact: {subject}',
+                        f'De: {full_name} ({email})\n\n{message_text}',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [settings.ADMINS[0][1]] if settings.ADMINS else ['admin@safeplace.com'],
+                        fail_silently=True
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning("Erreur envoi email: %s", str(e))
+
+                try:
+                    send_mail(
+                        'Votre message a Ã©tÃ© reÃ§u',
+                        f'Bonjour {first_name},\n\nMerci de nous avoir contactÃ©. Nous vous rÃ©pondrons dans les plus brefs dÃ©lais.\n\nThe SafePlace by K',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=True
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning("Erreur envoi email confirmation: %s", str(e))
+
+                success = True
+        except Exception as e:
+            error = f"Erreur lors de l'envoi du message: {str(e)}"
+
+    context = {'success': success, 'error': error}
+    return render(request, 'contact.html', context)
+
+
+def access_denied(request):
+    """Page d'accÃ¨s refusÃ©"""
+    return render(request, 'access_denied.html', status=403)
+
+
+def download_episode(request, pk):
+    episode = get_object_or_404(Episode, pk=pk, is_published=True)
+
+    # Fichier local uploade -> on le sert directement (si le fichier existe vraiment)
+    if episode.episode_type == 'video' and episode.video_file:
+        try:
+            from django.http import FileResponse
+            f = episode.video_file.open('rb')
+            filename = os.path.basename(episode.video_file.name)
+            return FileResponse(f, as_attachment=True, filename=filename)
+        except (FileNotFoundError, OSError):
+            pass  # fichier absent, on tombe sur la redirection URL en dessous
+
+    # URL externe -> redirection
+    if episode.episode_type == 'podcast':
+        source_url = (episode.audio_url or '').strip()
+    else:
+        source_url = (episode.video_url or '').strip()
+
+    if not source_url:
+        detail_url = 'video_detail' if episode.episode_type == 'video' else 'podcast_detail'
+        return redirect(detail_url, pk=episode.pk)
+
+    parsed = urlparse(source_url)
+    filename = parsed.path.split('/')[-1] or ''
+    if not filename:
+        filename = f"{episode.title}.mp3" if episode.episode_type == 'podcast' else f"{episode.title}.mp4"
+
+    content_type, _ = mimetypes.guess_type(filename)
+    resp = HttpResponse(status=302)
+    if content_type:
+        resp['Content-Type'] = content_type
+    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+    resp['Location'] = source_url
+    return resp
+
+
+def loading(request):
+    return render(request, 'loading.html')
+
+
+@owner_required
+def studio_live(request):
+    """Studio de diffusion en direct — accessible au propriétaire uniquement."""
+    from .models import MultiStreamConfig
+    cfg, _ = MultiStreamConfig.objects.get_or_create(pk=1, defaults={'title': 'Studio SafePlace'})
+    return render(request, 'studio.html', {'stream_config': cfg})
+
+
+@require_http_methods(['POST'])
+def add_comment(request, pk):
+    """Ajouter un commentaire Ã  un Ã©pisode (podcast ou vidÃ©o)."""
+    episode = get_object_or_404(Episode, pk=pk, is_published=True)
+
+    author_name = (request.POST.get('author_name') or '').strip()
+    author_email = (request.POST.get('author_email') or '').strip()
+    content = (request.POST.get('content') or '').strip()
+
+    if not author_name or not content:
+        return JsonResponse({'success': False, 'error': 'Le nom et le commentaire sont obligatoires.'}, status=400)
+
+    if len(content) > 2000:
+        return JsonResponse({'success': False, 'error': 'Le commentaire ne peut pas dÃ©passer 2000 caractÃ¨res.'}, status=400)
+
+    comment = Comment.objects.create(
+        episode=episode,
+        author_name=author_name,
+        author_email=author_email,
+        content=content,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'comment': {
+            'id': comment.id,
+            'author_name': comment.author_name,
+            'content': comment.content,
+            'created_at': comment.created_at.strftime('%d %B %Y'),
+        }
+    }, status=201)
+

@@ -1,0 +1,461 @@
+{% extends 'base.html' %}
+{% block title %}Podcasts — The SafePlace by K{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Category Tiles ── */
+.cat-section { margin-bottom: 2.5rem; }
+.cat-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.cat-section-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.1rem; font-weight: 900; color: #00261b;
+  letter-spacing: .01em;
+}
+.cat-nav-btns { display: flex; gap: 6px; }
+.cat-nav-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid rgba(0,38,27,.15);
+  background: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; color: #00261b;
+}
+.cat-nav-btn:hover { background: #00261b; color: #9ff700; border-color: #00261b; }
+.cat-nav-btn:disabled { opacity: .3; pointer-events: none; }
+
+.cat-scroll-wrap { position: relative; overflow: hidden; }
+.cat-row {
+  display: flex; gap: 14px;
+  overflow-x: auto; scroll-behavior: smooth;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.cat-row::-webkit-scrollbar { display: none; }
+
+.cat-tile {
+  flex: 0 0 200px; height: 110px;
+  border-radius: 16px; overflow: hidden;
+  position: relative; cursor: pointer;
+  text-decoration: none;
+  transition: transform .25s, box-shadow .25s;
+  display: flex; align-items: flex-end;
+}
+.cat-tile:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+.cat-tile.active { outline: 3px solid #9ff700; outline-offset: 2px; transform: translateY(-2px); }
+
+.cat-tile-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+}
+.cat-tile-icon {
+  position: absolute; right: 10px; top: 10px;
+  font-size: 44px; opacity: .18; color: #fff;
+  pointer-events: none; user-select: none;
+}
+.cat-tile-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.1) 60%);
+}
+.cat-tile-label {
+  position: relative; padding: 10px 12px;
+  font-weight: 800; font-size: .82rem; color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  line-height: 1.25; text-shadow: 0 1px 4px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.cat-tile-label small {
+  font-size: .65rem; font-weight: 600; opacity: .75;
+}
+
+/* ── Filter pills (compact, below tiles) ── */
+.filter-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; align-items: center;
+}
+.filter-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 16px; border-radius: 99px; font-size: .8rem; font-weight: 700;
+  border: 1.5px solid transparent; transition: all .2s; text-decoration: none;
+  cursor: pointer;
+}
+.filter-pill-all {
+  background: #00261b; color: #9ff700; border-color: #00261b;
+}
+.filter-pill-inactive {
+  background: #f4f4f1; color: #416900; border-color: transparent;
+}
+.filter-pill-inactive:hover { background: #e8f5e0; border-color: #9ff700; }
+.filter-pill-active {
+  background: #9ff700; color: #002210; border-color: #9ff700;
+}
+
+/* ── Video Modal ── */
+.vid-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 16px;
+}
+.vid-modal-overlay.open { display: flex; }
+.vid-modal-box {
+  background: #0a1a12; border-radius: 20px; overflow: hidden;
+  width: 100%; max-width: 900px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn { from { transform: scale(0.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.vid-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.vid-modal-title { color: #fff; font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+.vid-modal-close { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; transition: background 0.2s; }
+.vid-modal-close:hover { background: rgba(255,255,255,0.2); }
+.vid-modal-player { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+.vid-modal-player iframe, .vid-modal-player video { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+.vid-modal-footer { padding: 14px 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); }
+
+/* ── Share panel ── */
+.share-panel {
+  display: none; position: absolute; bottom: calc(100% + 8px); right: 0;
+  background: #fff; border-radius: 16px; padding: 14px;
+  box-shadow: 0 12px 40px rgba(0,38,27,0.18); z-index: 20; min-width: 210px;
+}
+.share-panel.open { display: block; }
+.share-btn-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; text-decoration: none; color: #1a1c1b; font-size: 0.875rem; font-weight: 600; transition: background 0.15s; border: none; background: none; cursor: pointer; width: 100%; }
+.share-btn-item:hover { background: #f4f4f1; }
+
+/* ── Episode Card ── */
+.ep-card-new { background: #fff; border-radius: 24px; border: 1px solid rgba(0,38,27,0.07); overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+.ep-card-new:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,38,27,0.1); }
+.ep-cover { position: relative; width: 100%; aspect-ratio: 1/1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.ep-cover-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0); transition: background 0.2s; }
+.ep-cover:hover .ep-cover-overlay { background: rgba(0,0,0,0.25); }
+.ep-play-fab { width: 52px; height: 52px; border-radius: 50%; background: #9ff700; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(159,247,0,0.5); transition: transform 0.2s; border: none; cursor: pointer; }
+.ep-cover:hover .ep-play-fab { transform: scale(1.12); }
+
+/* ── Section résultats ── */
+.results-label {
+  font-size: .82rem; font-weight: 700; color: #416900;
+  margin-bottom: 1.25rem; display: flex; align-items: center; gap: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main style="max-width:1440px;margin:0 auto;padding:2.5rem 1rem 2rem">
+
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="font-bold text-primary text-3xl md:text-5xl mb-2" style="font-family:'Montserrat',sans-serif">Nos Podcasts</h1>
+    <p class="text-on-surface-variant text-lg">Des rencontres et conversations pour nourrir votre foi.</p>
+  </div>
+
+  {% if categories %}
+  <!-- ── Section Catégories ── -->
+  <div class="cat-section">
+    <div class="cat-section-head">
+      <span class="cat-section-title">Catégories</span>
+      <div class="cat-nav-btns">
+        <button class="cat-nav-btn" id="cat-prev" onclick="scrollCat(-1)" aria-label="Précédent">
+          <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+        </button>
+        <button class="cat-nav-btn" id="cat-next" onclick="scrollCat(1)" aria-label="Suivant">
+          <span class="material-symbols-outlined" style="font-size:18px">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="cat-scroll-wrap">
+      <div class="cat-row" id="cat-row">
+        {% for cat in categories %}
+        <a href="?categorie={{ cat.id }}"
+           class="cat-tile {% if selected_cat == cat.id|stringformat:'s' %}active{% endif %}"
+           style="background:{{ cat.color }}">
+          <div class="cat-tile-bg" style="background: linear-gradient(135deg, {{ cat.color }}, color-mix(in srgb, {{ cat.color }} 60%, black));"></div>
+          <span class="material-symbols-outlined cat-tile-icon">{{ cat.icon }}</span>
+          <div class="cat-tile-gradient"></div>
+          <div class="cat-tile-label">
+            {{ cat.name }}
+          </div>
+        </a>
+        {% endfor %}
+        <!-- Tuile "Tous" -->
+        <a href="{% url 'podcasts' %}"
+           class="cat-tile {% if not selected_cat %}active{% endif %}"
+           style="background:#00261b">
+          <div class="cat-tile-bg" style="background: linear-gradient(135deg, #00261b, #416900);"></div>
+          <span class="material-symbols-outlined cat-tile-icon">apps</span>
+          <div class="cat-tile-gradient"></div>
+          <div class="cat-tile-label">Tous les podcasts</div>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Filtre compact en pills ── -->
+  <div class="filter-row">
+    <a href="{% url 'podcasts' %}" class="filter-pill {% if not selected_cat %}filter-pill-active{% else %}filter-pill-inactive{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:14px">apps</span> Tous
+    </a>
+    {% for cat in categories %}
+    <a href="?categorie={{ cat.id }}"
+       class="filter-pill {% if selected_cat == cat.id|stringformat:'s' %}filter-pill-active{% else %}filter-pill-inactive{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:13px">{{ cat.icon }}</span>
+      {{ cat.name }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ── Résultats ── -->
+  {% if selected_cat %}
+  <p class="results-label">
+    <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+    {{ episodes|length }} épisode{{ episodes|length|pluralize }} trouvé{{ episodes|length|pluralize }}
+  </p>
+  {% endif %}
+
+  {% if episodes %}
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    {% for episode in episodes %}
+    <div class="ep-card-new">
+
+      <!-- Cover -->
+      {% with yt=episode.get_youtube_embed_url %}
+      <div class="ep-cover" data-cover-color="{{ episode.cover_color }}"
+           data-video-url="{% if yt %}{{ yt }}{% else %}{{ episode.video_url }}{% endif %}"
+           data-video-type="{% if yt %}youtube{% else %}{% if episode.video_url %}direct{% else %}audio{% endif %}{% endif %}"
+           data-audio-url="{{ episode.audio_url }}"
+           data-title="{{ episode.title }}"
+           data-host="{{ episode.host }}"
+           data-color="{{ episode.cover_color }}"
+           data-episode-url="{% url 'podcast_detail' episode.pk %}"
+           onclick="handleEpClick(this)">
+        <span class="material-symbols-outlined text-white opacity-20" style="font-size:90px">{% if episode.video_url or yt %}smart_display{% else %}church{% endif %}</span>
+        <div class="ep-cover-overlay">
+          <div class="ep-play-fab">
+            <span class="material-symbols-outlined text-[#00261b]" style="font-size:26px;font-variation-settings:'FILL' 1">play_arrow</span>
+          </div>
+        </div>
+        <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm"
+              style="background:rgba(0,0,0,0.5);color:#fff">
+          {% if episode.video_url or yt %}
+            <span class="material-symbols-outlined align-middle" style="font-size:12px">smart_display</span> Vidéo
+          {% else %}
+            <span class="material-symbols-outlined align-middle" style="font-size:12px">headphones</span> Podcast
+          {% endif %}
+        </span>
+        {% if episode.duration %}
+        <span class="absolute bottom-3 right-3 bg-black/55 text-white px-2 py-0.5 rounded text-xs font-bold">{{ episode.duration }}</span>
+        {% endif %}
+        <span class="absolute top-3 right-3 bg-black/40 text-white px-2 py-0.5 rounded text-xs font-bold">Ép. {{ forloop.counter }}</span>
+      </div>
+      {% endwith %}
+
+      <!-- Body -->
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-2">
+          {% if episode.category %}
+          <a href="?categorie={{ episode.category.id }}"
+             class="text-xs font-bold px-2.5 py-1 rounded-full transition-colors hover:opacity-80"
+             style="background:rgba(159,247,0,0.12);color:#416900">
+            <span class="material-symbols-outlined align-middle" style="font-size:12px">{{ episode.category.icon }}</span>
+            {{ episode.category.name }}
+          </a>
+          {% else %}
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:rgba(159,247,0,0.12);color:#416900">Général</span>
+          {% endif %}
+          <span class="text-on-surface-variant text-xs">{{ episode.duration|default:"—" }}</span>
+        </div>
+        <h3 class="font-bold text-primary text-lg mb-1 line-clamp-2" style="font-family:'Montserrat',sans-serif">{{ episode.title }}</h3>
+        <p class="text-on-surface-variant text-sm mb-4 line-clamp-2">{{ episode.description }}</p>
+
+        <div class="flex items-center justify-between pt-4 border-t border-surface-container">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold">K</div>
+            <div>
+              <span class="text-on-surface font-bold text-sm block">{{ episode.host|default:"The SafePlace by K" }}</span>
+              <span class="text-on-surface-variant text-xs">{{ episode.created_at|date:"d M Y" }}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div style="position:relative">
+              <button class="js-share-toggle w-9 h-9 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high transition-colors" aria-label="Partager">
+                <span class="material-symbols-outlined text-primary" style="font-size:18px">share</span>
+              </button>
+              <div class="share-panel">
+                <p class="text-xs text-on-surface-variant font-bold mb-2 px-1">Partager via</p>
+                <button class="share-btn-item js-copy-link" data-url="{% url 'podcast_detail' episode.pk %}">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#416900">link</span> Copier le lien
+                </button>
+                <a class="share-btn-item" href="https://wa.me/?text={{ episode.title|urlencode }}%20{{ request.build_absolute_uri }}{% url 'podcast_detail' episode.pk %}" target="_blank" rel="noopener">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#25D366">chat</span> WhatsApp
+                </a>
+                <a class="share-btn-item" href="mailto:?subject={{ episode.title|urlencode }}&body=Écoutez%20cet%20épisode%20:%20{% url 'podcast_detail' episode.pk %}">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#ea4335">mail</span> Email
+                </a>
+                {% if episode.audio_url %}
+                <a class="share-btn-item" href="{% url 'episode_download' episode.pk %}" rel="noopener">
+                  <span class="material-symbols-outlined" style="font-size:18px;color:#00261b">download</span> Télécharger audio
+                </a>
+                {% endif %}
+              </div>
+            </div>
+            <a href="{% url 'podcast_detail' episode.pk %}" class="flex items-center gap-1 text-secondary font-bold text-sm hover:underline">
+              Écouter <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-24">
+    <div class="w-24 h-24 rounded-full bg-surface-container mx-auto mb-6 flex items-center justify-center">
+      <span class="material-symbols-outlined text-6xl text-primary">church</span>
+    </div>
+    {% if selected_cat %}
+    <h2 class="text-primary text-2xl font-bold mb-3">Aucun épisode dans cette catégorie</h2>
+    <p class="text-on-surface-variant mb-6 max-w-md mx-auto">Les épisodes de cette catégorie arrivent bientôt.</p>
+    <a href="{% url 'podcasts' %}" class="bg-secondary-container text-on-secondary-container font-bold px-6 py-3 rounded-full hover:shadow-lg transition-all inline-block">Voir tous les podcasts</a>
+    {% else %}
+    <h2 class="text-primary text-2xl font-bold mb-3">Bientôt disponible</h2>
+    <p class="text-on-surface-variant mb-6 max-w-md mx-auto">Nos épisodes sont en cours de préparation. Revenez bientôt !</p>
+    <a href="{% url 'contact' %}" class="bg-secondary-container text-on-secondary-container font-bold px-6 py-3 rounded-full hover:shadow-lg transition-all inline-block">Nous contacter</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</main>
+
+<!-- ════ Modal Player ════ -->
+<div class="vid-modal-overlay" id="vid-modal" role="dialog" aria-modal="true">
+  <div class="vid-modal-box">
+    <div class="vid-modal-header">
+      <span class="vid-modal-title" id="vid-modal-title"></span>
+      <div class="flex gap-2 items-center">
+        <a id="vid-modal-ext-link" href="#" target="_blank" rel="noopener"
+           class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full"
+           style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7)">
+          <span class="material-symbols-outlined" style="font-size:15px">open_in_new</span> Ouvrir
+        </a>
+        <button class="vid-modal-close" onclick="closeVideoModal()">
+          <span class="material-symbols-outlined" style="font-size:20px">close</span>
+        </button>
+      </div>
+    </div>
+    <div class="vid-modal-player" id="vid-modal-player"></div>
+    <div class="vid-modal-footer">
+      <button class="js-modal-copy flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold" style="background:rgba(255,255,255,0.1);color:#fff;border:none;cursor:pointer">
+        <span class="material-symbols-outlined" style="font-size:16px">link</span> Copier le lien
+      </button>
+      <a id="vid-modal-wa" href="#" target="_blank" rel="noopener" class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold" style="background:#25D366;color:#fff;text-decoration:none">
+        <span class="material-symbols-outlined" style="font-size:16px">chat</span> WhatsApp
+      </a>
+      <a id="vid-modal-email" href="#" class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold" style="background:rgba(255,255,255,0.1);color:#fff;text-decoration:none">
+        <span class="material-symbols-outlined" style="font-size:16px">mail</span> Email
+      </a>
+      <a id="vid-modal-detail" href="#" class="ml-auto flex items-center gap-1 text-sm font-bold" style="color:#9ff700;text-decoration:none">
+        Page complète <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var currentModalEpisodeUrl = '';
+
+/* ── Scroll horizontal des catégories ── */
+function scrollCat(dir) {
+  var row = document.getElementById('cat-row');
+  row.scrollBy({ left: dir * 440, behavior: 'smooth' });
+}
+
+/* ── Clic cover ── */
+function handleEpClick(cover) {
+  var vType = cover.dataset.videoType;
+  if (vType === 'youtube' || vType === 'direct') {
+    openVideoModal({
+      videoUrl: cover.dataset.videoUrl,
+      videoType: vType,
+      title: cover.dataset.title,
+      episodeUrl: cover.dataset.episodeUrl,
+      extUrl: cover.dataset.videoUrl
+    });
+  } else if (cover.dataset.audioUrl) {
+    document.dispatchEvent(new CustomEvent('sp:play', { detail: {
+      audioUrl: cover.dataset.audioUrl,
+      title: cover.dataset.title,
+      host: cover.dataset.host || '',
+      color: cover.dataset.color || '#00261b'
+    }}));
+  }
+}
+
+function openVideoModal(data) {
+  currentModalEpisodeUrl = data.episodeUrl;
+  document.getElementById('vid-modal-title').textContent = data.title;
+  document.getElementById('vid-modal-ext-link').href = data.extUrl || data.episodeUrl;
+  document.getElementById('vid-modal-detail').href = data.episodeUrl;
+  document.getElementById('vid-modal-wa').href = 'https://wa.me/?text=' + encodeURIComponent(data.title + ' ' + location.origin + data.episodeUrl);
+  document.getElementById('vid-modal-email').href = 'mailto:?subject=' + encodeURIComponent(data.title) + '&body=' + encodeURIComponent('Écoutez cet épisode : ' + location.origin + data.episodeUrl);
+  var player = document.getElementById('vid-modal-player');
+  if (data.videoType === 'youtube') {
+    player.innerHTML = '<iframe src="' + data.videoUrl + '?autoplay=1&rel=0&modestbranding=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  } else {
+    player.innerHTML = '<video controls autoplay preload="metadata" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"><source src="' + data.videoUrl + '" type="video/mp4"><source src="' + data.videoUrl + '" type="video/webm"></video>';
+  }
+  document.getElementById('vid-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVideoModal() {
+  document.getElementById('vid-modal').classList.remove('open');
+  document.getElementById('vid-modal-player').innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+document.getElementById('vid-modal').addEventListener('click', function(e) { if (e.target === this) closeVideoModal(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeVideoModal(); });
+
+document.querySelector('.js-modal-copy').addEventListener('click', function() {
+  navigator.clipboard.writeText(location.origin + currentModalEpisodeUrl).then(function() {
+    var b = document.querySelector('.js-modal-copy'), o = b.innerHTML;
+    b.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">check</span> Copié !';
+    setTimeout(function() { b.innerHTML = o; }, 2000);
+  });
+});
+
+/* ── Couleurs covers ── */
+document.querySelectorAll('[data-cover-color]').forEach(function(el) {
+  var color = el.dataset.coverColor || '#416900';
+  el.style.background = 'linear-gradient(135deg,' + color + ',#416900)';
+});
+
+/* ── Share panels ── */
+document.querySelectorAll('.js-share-toggle').forEach(function(btn) {
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var panel = btn.parentElement.querySelector('.share-panel');
+    var isOpen = panel.classList.contains('open');
+    document.querySelectorAll('.share-panel').forEach(function(p) { p.classList.remove('open'); });
+    if (!isOpen) panel.classList.add('open');
+  });
+});
+document.querySelectorAll('.js-copy-link').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    navigator.clipboard.writeText(location.origin + btn.dataset.url).then(function() {
+      var o = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;color:#416900">check</span> Copié !';
+      setTimeout(function() { btn.innerHTML = o; }, 2000);
+    });
+    btn.closest('.share-panel').classList.remove('open');
+  });
+});
+document.addEventListener('click', function() {
+  document.querySelectorAll('.share-panel').forEach(function(p) { p.classList.remove('open'); });
+});
+</script>
+{% endblock %}

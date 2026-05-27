@@ -1,0 +1,1955 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}The SafePlace by K — Accueil{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════
+     GOOGLE FONTS + TAILWIND CDN
+══════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Poppins', 'sans-serif'],
+          body: ['Poppins', 'sans-serif'],
+        },
+        colors: {
+          lime: {
+            400: '#9ff700',
+            500: '#7fd600',
+          },
+          forest: {
+            900: '#00150f',
+            800: '#00261b',
+            700: '#0b3d2e',
+            600: '#14503d',
+          },
+        },
+        animation: {
+          'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
+          'float': 'float 6s ease-in-out infinite',
+          'float-delayed': 'float 8s ease-in-out 2s infinite',
+          'fade-up': 'fadeUp 0.7s ease forwards',
+          'orb-drift': 'orbDrift 12s ease-in-out infinite',
+          'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+        },
+        keyframes: {
+          float: {
+            '0%,100%': { transform: 'translateY(0px) rotate(0deg)' },
+            '50%': { transform: 'translateY(-16px) rotate(3deg)' },
+          },
+          fadeUp: {
+            from: { opacity: 0, transform: 'translateY(28px)' },
+            to: { opacity: 1, transform: 'translateY(0)' },
+          },
+          orbDrift: {
+            '0%,100%': { transform: 'translate(0,0) scale(1)' },
+            '33%': { transform: 'translate(30px,-20px) scale(1.08)' },
+            '66%': { transform: 'translate(-20px,15px) scale(0.95)' },
+          },
+          glowPulse: {
+            '0%,100%': { boxShadow: '0 0 20px rgba(159,247,0,0.3)' },
+            '50%': { boxShadow: '0 0 50px rgba(159,247,0,0.7), 0 0 80px rgba(159,247,0,0.3)' },
+          },
+        },
+      }
+    }
+  }
+</script>
+
+<style>
+  /* ── Base ── */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #f4f6f0;
+    color: #1a2214;
+  }
+
+  /* ── HERO ── */
+  .hero-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    background: linear-gradient(145deg, #00150f 0%, #00261b 45%, #0b3d2e 100%);
+    min-height: 500px;
+  }
+
+  /* Noise grain overlay */
+  .hero-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Radial glow accent */
+  .hero-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(159,247,0,0.12) 0%, transparent 70%);
+    top: -150px;
+    right: -100px;
+    z-index: 1;
+    animation: orbDrift 14s ease-in-out infinite;
+  }
+  .hero-glow-2 {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(20,80,61,0.6) 0%, transparent 70%);
+    bottom: -100px;
+    left: -80px;
+    z-index: 1;
+    animation: orbDrift 18s ease-in-out 4s infinite reverse;
+  }
+
+  /* Particle canvas */
+  #sp-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* ── LIVE badge dot ── */
+  @keyframes liveDot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.5); }
+  }
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #9ff700;
+    animation: liveDot 1.4s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(159,247,0,0.8);
+  }
+
+  /* ── BENTO cards ── */
+  .bento-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease;
+  }
+  .bento-card:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(159,247,0,0.15);
+  }
+  .bento-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* ── Bento children above canvas ── */
+  .bento-card > *:not(.bento-particle-canvas):not(.card-shine) {
+    position: relative;
+    z-index: 2;
+  }
+  .bento-card .card-shine { z-index: 10; }
+
+
+  .card-shine {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mx,50%) var(--my,50%),
+      rgba(255,255,255,0.14) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 10;
+    border-radius: inherit;
+  }
+  .bento-card:hover .card-shine { opacity: 1; }
+
+  /* ── Episode cards ── */
+  .ep-card {
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease;
+    position: relative;
+    border: 1px solid rgba(0,38,27,0.07);
+  }
+  .ep-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0,38,27,0.12), 0 0 0 1px rgba(159,247,0,0.2);
+  }
+
+  /* ── Play FAB ── */
+  .play-fab {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: #9ff700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+    box-shadow: 0 4px 16px rgba(159,247,0,0.5);
+    color: #00261b;
+  }
+  .play-fab:hover {
+    transform: scale(1.18);
+    box-shadow: 0 8px 28px rgba(159,247,0,0.7);
+  }
+
+  /* ── CTA section ── */
+  .cta-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #00261b 0%, #0b3d2e 60%, #416900 100%);
+  }
+  .cta-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(159,247,0,0.4); border-radius: 99px; }
+
+  /* ── Fade-in observer ── */
+  .sp-reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.65s ease, transform 0.65s ease;
+  }
+  .sp-reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Sidebar particle canvas ── */
+  #sidebar-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* ── CTA particle canvas ── */
+  #cta-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── Float crosses ── */
+  .cross-deco {
+    font-family: 'Material Symbols Outlined';
+    font-variation-settings: 'FILL' 0, 'wght' 200;
+    position: absolute;
+    color: rgba(159,247,0,0.08);
+    animation: float 7s ease-in-out infinite;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+  }
+
+  /* ── Section title underline ── */
+  .section-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    color: #00261b;
+    position: relative;
+    display: inline-block;
+  }
+  .section-title::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: -4px;
+    width: 40px; height: 3px;
+    border-radius: 99px;
+    background: #9ff700;
+  }
+
+  /* ── Pill badge ── */
+  .pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 99px;
+  }
+
+  /* ── Btn styles ── */
+  .btn-lime {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 28px;
+    border-radius: 99px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: #9ff700;
+    color: #00261b;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+    box-shadow: 0 4px 20px rgba(159,247,0,0.4);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-lime:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 32px rgba(159,247,0,0.6);
+  }
+  .btn-glass {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 28px;
+    border-radius: 99px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    backdrop-filter: blur(8px);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-glass:hover {
+    background: rgba(255,255,255,0.18);
+    transform: translateY(-2px);
+  }
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 24px;
+    border-radius: 99px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    background: transparent;
+    color: #00261b;
+    border: 1.5px solid rgba(0,38,27,0.2);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-outline:hover {
+    border-color: #9ff700;
+    color: #416900;
+    background: rgba(159,247,0,0.06);
+  }
+
+  /* ── Sidebar card ── */
+  .sidebar-card {
+    background: linear-gradient(135deg, #00261b, #0b3d2e);
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(159,247,0,0.1);
+  }
+
+  /* ── Video card ── */
+  .vid-card {
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(0,38,27,0.07);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease;
+  }
+  .vid-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0,38,27,0.12);
+  }
+
+  /* ── Scroll indicator ── */
+  @keyframes bounceY {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+  .scroll-ind {
+    animation: bounceY 1.8s ease-in-out infinite;
+  }
+
+  /* ── Episode cover dynamic colors ── */
+  .episode-cover {
+    background: linear-gradient(135deg, var(--cover-color, #00261b), #416900);
+  }
+  
+  /* ── Recommended row ── */
+  .rec-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .rec-row:hover { background: rgba(159,247,0,0.06); }
+
+  /* ── Reminder modal ── */
+  .modal-wrap {
+    position: fixed; inset: 0; z-index: 999;
+    display: none;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+  }
+  .modal-wrap.open { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 28px;
+    padding: 36px;
+    max-width: 400px;
+    width: calc(100% - 32px);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+    animation: fadeUp 0.35s ease;
+  }
+
+  /* ── Section gap ── */
+  .sp-section { margin-bottom: 56px; }
+
+  /* ── Fancy number badge ── */
+  .num-badge {
+    min-width: 26px; height: 26px;
+    border-radius: 8px;
+    background: rgba(159,247,0,0.15);
+    color: #416900;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+/* ── Responsive Media Queries ── */
+@media (max-width: 768px) {
+  .hero-wrap {
+    min-height: 400px;
+    padding: 24px 16px;
+  }
+  
+  .hero-glow {
+    width: 300px;
+    height: 300px;
+    top: -75px;
+    right: -50px;
+  }
+  
+  .hero-glow-2 {
+    width: 200px;
+    height: 200px;
+    bottom: -50px;
+    left: -40px;
+  }
+  
+  .bento-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  
+  .bento-card {
+    min-height: 180px;
+  }
+  
+  .ep-card {
+    padding: 16px;
+  }
+  
+  .vid-card {
+    padding: 16px;
+  }
+  
+  .sidebar-card {
+    padding: 20px;
+  }
+  
+  .cta-wrap {
+    padding: 40px 24px;
+  }
+  
+  .btn-lime, .btn-glass, .btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-wrap {
+    min-height: 350px;
+    padding: 20px 12px;
+  }
+  
+  .hero-glow {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .section-title {
+    font-size: 1.25rem;
+  }
+  
+  .ep-card, .vid-card {
+    padding: 12px;
+  }
+  
+  .play-fab {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .sidebar {
+    display: none;
+  }
+  
+  .main-content {
+    width: 100%;
+    padding: 0 12px;
+  }
+}
+
+/* ════════════════════════════════════
+   NOUVEAUX EFFETS ATYPIQUES
+════════════════════════════════════ */
+
+/* ── Curseur magnétique ── */
+#sp-cursor, #sp-cursor-ring {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%,-50%);
+  will-change: left, top;
+}
+#sp-cursor {
+  width: 10px; height: 10px;
+  background: #9ff700;
+  z-index: 10000;
+  box-shadow: 0 0 12px rgba(159,247,0,0.7);
+  transition: width .22s cubic-bezier(.34,1.56,.64,1),
+              height .22s cubic-bezier(.34,1.56,.64,1),
+              background .22s;
+}
+#sp-cursor.sp-hov { width: 38px; height: 38px; background: rgba(159,247,0,0.35); box-shadow: 0 0 24px rgba(159,247,0,0.5); }
+#sp-cursor-ring {
+  width: 40px; height: 40px;
+  border: 1.5px solid rgba(159,247,0,0.45);
+  background: transparent;
+  z-index: 9999;
+  transition: width .38s ease, height .38s ease;
+}
+#sp-cursor.sp-hov + #sp-cursor-ring { width: 64px; height: 64px; border-color: rgba(159,247,0,0.25); }
+@media (hover:none),(pointer:coarse) { #sp-cursor,#sp-cursor-ring{display:none!important} }
+
+/* ── Hero sound wave ── */
+#hero-wave {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 72px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 36px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.18;
+}
+.hw-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(to top, #9ff700, rgba(159,247,0,0.05));
+  transform-origin: bottom;
+  min-height: 3px;
+  animation: hwA var(--dur,1s) ease-in-out var(--del,0s) infinite alternate;
+}
+@keyframes hwA {
+  from { transform: scaleY(var(--lo,.1)); }
+  to   { transform: scaleY(var(--hi,1)); }
+}
+
+/* ── Morphing blobs ── */
+.hero-blob {
+  position: absolute;
+  pointer-events: none;
+  animation: blobM var(--bspd,14s) ease-in-out var(--bdel,0s) infinite;
+  z-index: 1;
+}
+@keyframes blobM {
+  0%,100%{ border-radius:60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25%    { border-radius:30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50%    { border-radius:50% 60% 40% 60% / 30% 60% 50% 70%; }
+  75%    { border-radius:70% 30% 60% 40% / 60% 40% 60% 30%; }
+}
+
+/* ── Verse ticker ── */
+.sp-ticker-outer {
+  overflow: hidden;
+  margin-bottom: 52px;
+  padding: 10px 0;
+  border-radius: 14px;
+  background: rgba(159,247,0,0.04);
+  border: 1px solid rgba(159,247,0,0.12);
+  mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+.sp-ticker-inner {
+  display: flex;
+  gap: 72px;
+  white-space: nowrap;
+  animation: spTck 40s linear infinite;
+}
+.sp-ticker-outer:hover .sp-ticker-inner { animation-play-state: paused; }
+@keyframes spTck { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.sp-ti {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: 'Poppins', sans-serif;
+  font-size: .79rem; font-weight: 600;
+  color: #416900; letter-spacing: .015em;
+}
+.sp-ti-dot { width: 5px; height: 5px; border-radius:50%; background:#9ff700; flex-shrink:0; }
+
+/* ── Text scramble cursor ── */
+.section-title { cursor: default; user-select: none; }
+
+/* ── Ripple click ── */
+.sp-rh { position: relative; overflow: hidden; }
+.sp-rpl {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.28);
+  width: 6px; height: 6px;
+  margin: -3px 0 0 -3px;
+  transform: scale(0);
+  animation: spR .55s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes spR { to { transform: scale(70); opacity: 0; } }
+
+/* ── Magnetic button glow trail ── */
+.btn-lime { will-change: transform; }
+
+/* ── Hero aurora sweep ── */
+.hero-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: conic-gradient(from 0deg at 80% 30%,
+    rgba(159,247,0,0) 0deg,
+    rgba(159,247,0,0.06) 40deg,
+    rgba(0,38,27,0) 80deg,
+    rgba(159,247,0,0) 360deg);
+  animation: auroraRot 18s linear infinite;
+  opacity: 0.7;
+}
+@keyframes auroraRot {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+</style>
+
+<main class="max-w-[1320px] mx-auto px-4 md:px-8 py-8 flex gap-8">
+
+  <!-- ══════════════ MAIN CONTENT ══════════════ -->
+  <div class="flex-1 min-w-0">
+
+    <!-- ═══════════════════════════════════════
+         HERO
+    ═══════════════════════════════════════ -->
+    <section class="hero-wrap sp-section relative" style="min-height:500px;" aria-label="Hero">
+
+      <!-- Atmospheric glows -->
+      <div class="hero-glow"></div>
+      <div class="hero-glow-2"></div>
+
+      <!-- Aurora sweep -->
+      <div class="hero-aurora"></div>
+
+      <!-- Morphing blobs -->
+      <div class="hero-blob" style="width:380px;height:380px;background:rgba(159,247,0,0.13);top:-70px;left:30%;--bspd:12s;--bdel:0s"></div>
+      <div class="hero-blob" style="width:200px;height:200px;background:rgba(20,80,61,0.7);bottom:-40px;right:12%;--bspd:16s;--bdel:4s"></div>
+
+      <!-- Sound wave visualizer -->
+      <div id="hero-wave" aria-hidden="true"></div>
+
+      <!-- Floating crosses -->
+      <span class="cross-deco" style="font-size:80px;top:16px;right:40px;animation-delay:0s">church</span>
+      <span class="cross-deco" style="font-size:48px;bottom:40px;right:28%;animation-delay:1.5s;opacity:0.06">church</span>
+      <span class="cross-deco" style="font-size:32px;top:40%;left:40px;animation-delay:3s;opacity:0.05">church</span>
+      <span class="cross-deco" style="font-size:56px;bottom:20%;left:22%;animation-delay:0.8s;opacity:0.05">church</span>
+
+      <!-- Particle canvas -->
+      <canvas id="sp-canvas" aria-hidden="true"></canvas>
+
+      <!-- Mouse glow overlay -->
+      <div id="hero-mouse-glow" style="
+        position:absolute; inset:0; z-index:2; pointer-events:none;
+        background: radial-gradient(circle 180px at var(--mx,50%) var(--my,50%),
+          rgba(159,247,0,0.08) 0%, transparent 100%);
+        opacity:0; transition: opacity 0.4s;
+      "></div>
+
+      <!-- Content -->
+      <div class="relative z-10 flex flex-col justify-end h-full p-8 md:p-12" style="min-height:500px;">
+
+        {% if live_streams %}
+          <div class="pill-badge mb-5" style="background:rgba(159,247,0,0.15);color:#9ff700;border:1px solid rgba(159,247,0,0.25)">
+            <span class="live-dot"></span>EN DIRECT
+          </div>
+          <h1 class="font-display font-extrabold text-white text-4xl md:text-5xl leading-tight mb-4 max-w-2xl" style="font-family:'Poppins',sans-serif">{{ live_streams.0.title }}</h1>
+          <p class="text-white/60 text-base mb-8 max-w-xl">{{ live_streams.0.description|truncatewords:20 }}</p>
+          <div class="flex flex-wrap gap-3">
+            <a href="{% url 'live' %}" class="btn-lime">
+              <span class="material-symbols-outlined text-[18px]">sensors</span>Rejoindre le Live
+            </a>
+            <button type="button" class="btn-glass js-reminder-btn" data-title="{{ live_streams.0.title }}">Me le rappeler</button>
+          </div>
+
+        {% elif featured and featured.episode_type == 'video' %}
+          <div class="pill-badge mb-5" style="background:rgba(20,80,61,0.7);color:#9ff700;border:1px solid rgba(159,247,0,0.2)">
+            <span class="material-symbols-outlined text-[14px]">smart_display</span>DERNIÈRE VIDÉO
+          </div>
+          <h1 class="font-display font-extrabold text-white text-4xl md:text-5xl leading-tight mb-4 max-w-2xl" style="font-family:'Poppins',sans-serif">{{ featured.title }}</h1>
+          <p class="text-white/60 text-base mb-8 max-w-xl">{{ featured.description|truncatewords:20 }}</p>
+          <div class="flex flex-wrap gap-3">
+            <a href="{% url 'video_detail' featured.pk %}" class="btn-lime">
+              <span class="material-symbols-outlined text-[18px]">play_arrow</span>Regarder la vidéo
+            </a>
+            <a href="{% url 'videos' %}" class="btn-glass">Toutes les vidéos</a>
+          </div>
+
+        {% elif featured %}
+          <h1 class="font-display font-extrabold text-white text-4xl md:text-5xl leading-tight mb-4 max-w-2xl" style="font-family:'Poppins',sans-serif">{{ featured.title }}</h1>
+          <p class="text-white/60 text-base mb-8 max-w-xl">{{ featured.description|truncatewords:20 }}</p>
+          <div class="flex flex-wrap gap-3">
+            <button type="button" class="btn-lime js-play-btn"
+              data-audio-url="{{ featured.audio_url }}"
+              data-title="{{ featured.title }}"
+              data-host="{{ featured.host }}"
+              data-color="{{ featured.cover_color }}">
+              <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">play_arrow</span>Écouter maintenant
+            </button>
+            <a href="{% if featured.episode_type == 'video' %}{% url 'video_detail' featured.pk %}{% else %}{% url 'podcast_detail' featured.pk %}{% endif %}" class="btn-glass">Voir les détails</a>
+          </div>
+
+        {% else %}
+          <div class="pill-badge mb-5" style="background:rgba(20,80,61,0.7);color:#9ff700;border:1px solid rgba(159,247,0,0.2)">
+            <span class="material-symbols-outlined text-[14px]">church</span>BIENVENUE
+          </div>
+          <h1 class="font-extrabold text-white leading-tight mb-4 max-w-2xl" style="font-family:'Poppins',sans-serif;font-size:clamp(2rem,5vw,3.2rem)">
+            Votre Refuge de Foi<br>et d'Inspirations Chrétiennes
+          </h1>
+          <p class="text-white/60 text-base mb-8 max-w-lg">Podcasts, vidéos, émissions live et méditations bibliques pour nourrir votre foi au quotidien.</p>
+          <div class="flex flex-wrap gap-3">
+            <a href="{% url 'podcasts' %}" class="btn-lime">
+              <span class="material-symbols-outlined text-[18px]">headphones</span>Découvrir les podcasts
+            </a>
+            <a href="{% url 'videos' %}" class="btn-glass">Voir les vidéos</a>
+          </div>
+        {% endif %}
+
+        <!-- Viewers badge -->
+        {% if live_streams %}
+        <div class="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 rounded-full" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1)">
+          <span class="material-symbols-outlined text-[16px]" style="color:#9ff700;font-variation-settings:'FILL' 1">visibility</span>
+          <span class="text-white font-bold text-sm" style="font-family:'Poppins',sans-serif">{{ live_streams.0.viewers_count|default:"1.2K" }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Scroll indicator -->
+        <button type="button" class="scroll-ind hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full items-center justify-center"
+          style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);backdrop-filter:blur(8px)"
+          onclick="document.querySelector('.sp-section').nextElementSibling.scrollIntoView({behavior:'smooth'})"
+          aria-label="Défiler">
+          <span class="material-symbols-outlined text-white/50">expand_more</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         VERSE TICKER
+    ═══════════════════════════════════════ -->
+    <div class="sp-ticker-outer" aria-hidden="true">
+      <div class="sp-ticker-inner" id="sp-ticker-inner"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         NOS ÉMISSIONS — BENTO
+    ═══════════════════════════════════════ -->
+    <section class="sp-section sp-reveal" aria-labelledby="emissions-title">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-7">
+        <div>
+          <h2 id="emissions-title" class="section-title">Nos Émissions</h2>
+          <p class="text-sm mt-3" style="color:rgba(0,38,27,0.55);font-family:'Poppins',sans-serif">Thématiques chrétiennes pour édifier votre foi.</p>
+        </div>
+        <div class="flex gap-4">
+          <a href="{% url 'live' %}" class="btn-outline" style="font-size:0.8rem;padding:9px 18px">
+            Lives <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+          </a>
+          <a href="{% url 'videos' %}" class="btn-outline" style="font-size:0.8rem;padding:9px 18px">
+            Vidéos <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Bento Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" style="grid-template-rows: 220px 180px">
+
+        <!-- Prédication — tall -->
+        <a href="{% url 'podcasts' %}?categorie={{ category_ids_by_slug.predication|default:'' }}"
+           class="bento-card col-span-2 row-span-2 flex flex-col justify-end p-6"
+           style="background:linear-gradient(145deg,#00150f,#0b3d2e)"
+           aria-label="Prédication">
+          <canvas class="bento-particle-canvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;border-radius:inherit"></canvas>
+          <div class="card-shine"></div>
+          <div class="mb-auto pt-4">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style="background:rgba(159,247,0,0.12)">
+              <span class="material-symbols-outlined text-3xl" style="color:#9ff700">church</span>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-white font-extrabold text-2xl mb-1" style="font-family:'Poppins',sans-serif">Prédication</h3>
+            <p class="text-white/50 text-sm">Études bibliques approfondies</p>
+            <div class="mt-4 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full" style="background:rgba(159,247,0,0.12);color:#9ff700">
+              Explorer <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Témoignages -->
+        <a href="{% url 'podcasts' %}?categorie={{ category_ids_by_slug.temoignages|default:'' }}"
+           class="bento-card col-span-1 flex flex-col justify-end p-5"
+           style="background:linear-gradient(135deg,#2d5a00,#9ff700 180%)"
+           aria-label="Témoignages">
+          <canvas class="bento-particle-canvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;border-radius:inherit"></canvas>
+          <div class="card-shine"></div>
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:rgba(0,0,0,0.15)">
+            <span class="material-symbols-outlined text-white text-xl" style="font-variation-settings:'FILL' 1">record_voice_over</span>
+          </div>
+          <h3 class="text-white font-bold text-base" style="font-family:'Poppins',sans-serif">Témoignages</h3>
+          <p class="text-white/60 text-xs mt-0.5">Histoires de vie</p>
+        </a>
+
+        <!-- Louange -->
+        <a href="{% url 'podcasts' %}?categorie={{ category_ids_by_slug.louange|default:'' }}"
+           class="bento-card col-span-1 flex flex-col justify-end p-5"
+           style="background:linear-gradient(135deg,#0b3d2e,#396756)"
+           aria-label="Louange">
+          <canvas class="bento-particle-canvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;border-radius:inherit"></canvas>
+          <div class="card-shine"></div>
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:rgba(159,247,0,0.12)">
+            <span class="material-symbols-outlined text-white text-xl" style="font-variation-settings:'FILL' 1">music_note</span>
+          </div>
+          <h3 class="text-white font-bold text-base" style="font-family:'Poppins',sans-serif">Louange</h3>
+          <p class="text-white/60 text-xs mt-0.5">Adoration &amp; Prière</p>
+        </a>
+
+        <!-- Famille — wide -->
+        <a href="{% url 'podcasts' %}?categorie={{ category_ids_by_slug.famille|default:'' }}"
+           class="bento-card col-span-2 flex flex-col justify-end p-5"
+           style="background:linear-gradient(135deg,#00261b,#416900)"
+           aria-label="Famille">
+          <canvas class="bento-particle-canvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;border-radius:inherit"></canvas>
+          <div class="card-shine"></div>
+          <div class="flex items-end gap-4">
+            <div>
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:rgba(159,247,0,0.12)">
+                <span class="material-symbols-outlined text-white text-xl" style="font-variation-settings:'FILL' 1">family_restroom</span>
+              </div>
+              <h3 class="text-white font-bold text-lg" style="font-family:'Poppins',sans-serif">Famille</h3>
+              <p class="text-white/60 text-xs mt-0.5">Foi &amp; Quotidien</p>
+            </div>
+            <div class="ml-auto inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full" style="background:rgba(159,247,0,0.12);color:#9ff700">
+              <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         DERNIERS PODCASTS
+    ═══════════════════════════════════════ -->
+    <section class="sp-section sp-reveal" aria-labelledby="podcasts-title">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-7">
+        <div>
+          <h2 id="podcasts-title" class="section-title">Derniers Podcasts</h2>
+          <p class="text-sm mt-3" style="color:rgba(0,38,27,0.55)">Épisodes récents de The SafePlace by K.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="carousel-prev" class="w-10 h-10 rounded-full flex items-center justify-center border transition-all"
+            style="border-color:rgba(0,38,27,0.15);color:#00261b"
+            aria-label="Précédent">
+            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+          </button>
+          <button id="carousel-next" class="w-10 h-10 rounded-full flex items-center justify-center border transition-all"
+            style="border-color:rgba(0,38,27,0.15);color:#00261b"
+            aria-label="Suivant">
+            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      {% if latest_episodes %}
+      <div id="podcast-carousel" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" role="list">
+        {% for episode in latest_episodes %}
+        <article class="ep-card" role="listitem">
+          <!-- Cover -->
+          <div class="relative aspect-video flex items-center justify-center episode-cover"
+            data-cover-color="{{ episode.cover_color|default:'#00261b' }}">
+            <span class="material-symbols-outlined text-white/30 text-7xl">church</span>
+            <button type="button"
+              class="play-fab absolute inset-0 m-auto js-play-btn"
+              data-audio-url="{{ episode.audio_url }}"
+              data-title="{{ episode.title }}"
+              data-host="{{ episode.host }}"
+              data-color="{{ episode.cover_color }}"
+              aria-label="Écouter {{ episode.title }}"
+              style="width:52px;height:52px">
+              <span class="material-symbols-outlined text-[22px]" style="font-variation-settings:'FILL' 1">play_arrow</span>
+            </button>
+            <!-- Duration badge -->
+            {% if episode.duration %}
+            <span class="absolute bottom-3 right-3 text-xs font-bold px-2 py-1 rounded-lg" style="background:rgba(0,0,0,0.55);color:#fff;font-family:'Poppins',sans-serif">{{ episode.duration }}</span>
+            {% endif %}
+          </div>
+          <!-- Body -->
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:rgba(159,247,0,0.12);color:#416900;font-family:'Poppins',sans-serif">
+                {{ episode.category.name|default:"Général" }}
+              </span>
+            </div>
+            <h3 class="font-bold text-base leading-snug mb-2 line-clamp-2" style="font-family:'Poppins',sans-serif;color:#00261b">{{ episode.title }}</h3>
+            <p class="text-sm line-clamp-2 mb-4" style="color:rgba(0,38,27,0.55)">{{ episode.description }}</p>
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background:#00261b;font-family:'Poppins',sans-serif">K</div>
+              <span class="text-xs font-medium" style="color:rgba(0,38,27,0.6)">{{ episode.host|default:"The SafePlace by K" }}</span>
+              <a href="{% if episode.episode_type == 'video' %}{% url 'video_detail' episode.pk %}{% else %}{% url 'podcast_detail' episode.pk %}{% endif %}"
+                class="ml-auto text-xs font-bold flex items-center gap-1"
+                style="color:#416900"
+                aria-label="Détails de {{ episode.title }}">
+                Détails <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <!-- Empty state -->
+      <div class="text-center py-16 rounded-3xl" style="background:rgba(159,247,0,0.04);border:1.5px dashed rgba(159,247,0,0.25)">
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:rgba(159,247,0,0.1)">
+          <span class="material-symbols-outlined text-3xl" style="color:#9ff700">church</span>
+        </div>
+        <h3 class="font-bold text-lg mb-2" style="font-family:'Poppins',sans-serif;color:#00261b">Les épisodes arrivent bientôt</h3>
+        <p class="text-sm mb-6" style="color:rgba(0,38,27,0.55)">Contactez-nous pour recevoir des informations sur les nouvelles publications.</p>
+        <a href="{% url 'contact' %}" class="btn-lime" style="font-size:0.85rem;padding:11px 24px">Nous contacter</a>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         DERNIÈRES VIDÉOS
+    ═══════════════════════════════════════ -->
+    <section class="sp-section sp-reveal" aria-labelledby="videos-title">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-7">
+        <div>
+          <h2 id="videos-title" class="section-title">Dernières Vidéos</h2>
+          <p class="text-sm mt-3" style="color:rgba(0,38,27,0.55)">Enseignements et moments forts en image.</p>
+        </div>
+        <a href="{% url 'videos' %}" class="btn-outline" style="font-size:0.8rem;padding:9px 18px">
+          Tout voir <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+        </a>
+      </div>
+      {% if latest_videos %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5" role="list">
+        {% for episode in latest_videos %}
+        <article class="vid-card" role="listitem">
+          <a href="{% url 'video_detail' episode.pk %}" class="block relative overflow-hidden episode-cover" data-cover-color="{{ episode.cover_color|default:'#00261b' }}">
+            <span class="material-symbols-outlined text-white/30 text-8xl absolute inset-0 m-auto w-fit h-fit">smart_display</span>
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style="background:rgba(0,0,0,0.3)">
+              <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background:#9ff700">
+                <span class="material-symbols-outlined text-2xl" style="color:#00261b;font-variation-settings:'FILL' 1">play_arrow</span>
+              </div>
+            </div>
+            {% if episode.duration %}
+            <span class="absolute bottom-3 right-3 text-xs font-bold px-2 py-1 rounded-lg" style="background:rgba(0,0,0,0.6);color:#fff;font-family:'Poppins',sans-serif">{{ episode.duration }}</span>
+            {% endif %}
+          </a>
+          <div class="p-5">
+            <h3 class="font-bold text-base leading-snug mb-2 line-clamp-2" style="font-family:'Poppins',sans-serif;color:#00261b">{{ episode.title }}</h3>
+            <p class="text-sm line-clamp-2 mb-4" style="color:rgba(0,38,27,0.55)">{{ episode.description }}</p>
+            <a href="{% url 'video_detail' episode.pk %}" class="inline-flex items-center gap-1.5 text-sm font-bold" style="color:#416900">
+              <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">play_circle</span>Regarder
+            </a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm" style="color:rgba(0,38,27,0.55)">
+        Les vidéos seront bientôt disponibles.
+        <a href="{% url 'contact' %}" class="font-bold underline" style="color:#416900">Contactez-nous</a> pour être informé.
+      </p>
+      {% endif %}
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         CTA
+    ═══════════════════════════════════════ -->
+    <section class="cta-wrap sp-reveal" aria-labelledby="cta-title" style="margin-bottom:40px">
+      <!-- CTA Particles -->
+      <canvas id="cta-canvas" aria-hidden="true"></canvas>
+
+      <!-- Deco crosses -->
+      <span class="cross-deco" style="font-size:80px;top:-8px;left:20px;animation-delay:0s;opacity:0.07">church</span>
+      <span class="cross-deco" style="font-size:48px;bottom:8px;right:40px;animation-delay:2s;opacity:0.06">church</span>
+
+      <div class="relative z-10 py-16 px-8 md:px-12 text-center">
+        <div class="pill-badge mb-5 mx-auto" style="background:rgba(159,247,0,0.12);color:#9ff700;border:1px solid rgba(159,247,0,0.2);display:inline-flex">
+          <span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1">volunteer_activism</span>
+          REJOINDRE LA COMMUNAUTÉ
+        </div>
+        <h2 id="cta-title" class="font-extrabold text-white mb-4 max-w-xl mx-auto" style="font-family:'Poppins',sans-serif;font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.2">
+          Faites partie de notre mission
+        </h2>
+        <p class="mb-8 mx-auto max-w-md text-sm" style="color:rgba(255,255,255,0.6)">
+          Contactez-nous pour recevoir les dernières nouvelles sur nos épisodes, méditations et émissions en direct.
+        </p>
+        <div class="flex flex-wrap gap-4 justify-center">
+          <a href="{% url 'contact' %}" class="btn-lime">
+            <span class="material-symbols-outlined text-[18px]">notifications</span>Nous contacter
+          </a>
+          <a href="{% url 'about' %}" class="btn-glass">En savoir plus</a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  <!-- /MAIN CONTENT -->
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <aside class="w-80 hidden xl:block shrink-0" aria-label="Sidebar">
+    <div class="sticky top-8 space-y-6">
+
+      <!-- Lives en cours -->
+      {% if live_streams %}
+      <div class="sidebar-card p-6">
+        <canvas id="sidebar-canvas" aria-hidden="true"></canvas>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-5">
+            <span class="live-dot"></span>
+            <h3 class="font-bold text-white text-base" style="font-family:'Poppins',sans-serif">En Direct Maintenant</h3>
+          </div>
+          {% for stream in live_streams %}
+          <a href="{% url 'live' %}"
+             class="flex items-center gap-3 p-3 rounded-2xl mb-3 transition-all"
+             style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06)"
+             onmouseover="this.style.background='rgba(159,247,0,0.08)'"
+             onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(159,247,0,0.1)">
+              <span class="material-symbols-outlined text-[18px]" style="color:#9ff700">sensors</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-sm text-white truncate" style="font-family:'Poppins',sans-serif">{{ stream.title }}</p>
+              <p class="text-xs" style="color:rgba(255,255,255,0.4)">{{ stream.get_platform_display }} · {{ stream.viewers_count }} spectateurs</p>
+            </div>
+          </a>
+          {% endfor %}
+          <a href="{% url 'live' %}" class="block w-full text-center py-2.5 rounded-full font-bold text-sm transition-all"
+            style="background:#9ff700;color:#00261b;font-family:'Poppins',sans-serif">
+            Rejoindre →
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Recommandés -->
+      <div class="bg-white rounded-3xl p-6 border" style="border-color:rgba(0,38,27,0.07)">
+        <h2 class="font-bold text-base mb-5" style="font-family:'Poppins',sans-serif;color:#00261b">Recommandés</h2>
+        <div class="space-y-1" role="list">
+          {% for episode in latest_episodes|slice:":4" %}
+          <div class="rec-row" role="listitem">
+            <a href="{% if episode.episode_type == 'video' %}{% url 'video_detail' episode.pk %}{% else %}{% url 'podcast_detail' episode.pk %}{% endif %}"
+               class="w-11 h-11 rounded-xl flex items-center justify-center text-white text-sm flex-shrink-0 episode-cover"
+               data-cover-color="{{ episode.cover_color|default:'#00261b' }}">
+              <span class="material-symbols-outlined text-[16px]">church</span>
+            </a>
+            <div class="flex-1 min-w-0">
+              <h4 class="font-bold text-sm truncate" style="color:#00261b;font-family:'Poppins',sans-serif">{{ episode.title }}</h4>
+              <p class="text-xs" style="color:rgba(0,38,27,0.45)">{{ episode.host|default:"The SafePlace by K" }}</p>
+            </div>
+            <button type="button" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 js-play-btn transition-all"
+              style="background:rgba(159,247,0,0.1);color:#416900"
+              data-audio-url="{{ episode.audio_url }}"
+              data-title="{{ episode.title }}"
+              data-host="{{ episode.host }}"
+              onmouseover="this.style.background='#9ff700';this.style.color='#00261b'"
+              onmouseout="this.style.background='rgba(159,247,0,0.1)';this.style.color='#416900'"
+              aria-label="Écouter {{ episode.title }}">
+              <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1">play_arrow</span>
+            </button>
+          </div>
+          {% empty %}
+          <p class="text-sm text-center py-6" style="color:rgba(0,38,27,0.4)">Aucun épisode pour l'instant</p>
+          {% endfor %}
+        </div>
+        <a href="{% url 'podcasts' %}" class="btn-outline w-full justify-center mt-5" style="font-size:0.8rem;padding:10px 0">
+          Voir tous les épisodes
+        </a>
+      </div>
+
+      <!-- Rejoindre -->
+      <div class="sidebar-card p-7">
+        <div class="relative z-10">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style="background:rgba(159,247,0,0.12)">
+            <span class="material-symbols-outlined" style="color:#9ff700;font-variation-settings:'FILL' 1">volunteer_activism</span>
+          </div>
+          <h3 class="font-bold text-white text-base mb-2" style="font-family:'Poppins',sans-serif">Rejoindre la Communauté</h3>
+          <p class="text-sm mb-5" style="color:rgba(255,255,255,0.5)">Contactez-nous pour ne manquer aucun épisode ni émission.</p>
+          <a href="{% url 'contact' %}"
+             class="block w-full text-center py-3 rounded-full font-bold text-sm transition-all"
+             style="background:#9ff700;color:#00261b;font-family:'Poppins',sans-serif">
+            <span class="material-symbols-outlined text-sm mr-1" style="vertical-align:middle">notifications</span>
+            Nous contacter
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+</main>
+
+<!-- ══════════════════════════════════════════════
+     REMINDER MODAL
+══════════════════════════════════════════════ -->
+<div id="reminder-modal" class="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="rm-title">
+  <div class="modal-box">
+    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style="background:rgba(159,247,0,0.1)">
+      <span class="material-symbols-outlined" style="color:#9ff700;font-variation-settings:'FILL' 1">notifications_active</span>
+    </div>
+    <h2 id="rm-title" class="font-bold text-xl mb-1" style="font-family:'Poppins',sans-serif;color:#00261b">Me rappeler ce live</h2>
+    <p id="rm-live-title" class="text-sm mb-5" style="color:rgba(0,38,27,0.55)"></p>
+    <div class="space-y-4">
+      <div>
+        <label for="rm-email" class="block text-sm font-bold mb-1.5" style="color:#00261b">Votre adresse e-mail</label>
+        <input type="email" id="rm-email"
+          class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
+          style="border:1.5px solid rgba(0,38,27,0.15);background:#f4f6f0;color:#00261b;font-family:'Poppins',sans-serif"
+          placeholder="email@exemple.com"
+          onfocus="this.style.borderColor='#9ff700'"
+          onblur="this.style.borderColor='rgba(0,38,27,0.15)'"
+          autocomplete="email">
+      </div>
+      <p id="rm-feedback" class="text-sm hidden"></p>
+      <div class="flex gap-3">
+        <button id="rm-confirm" type="button" class="btn-lime flex-1 justify-center" style="font-size:0.85rem">Me rappeler</button>
+        <button id="rm-close" type="button" class="flex-1 py-3 rounded-full font-bold text-sm transition-all border"
+          style="border-color:rgba(0,38,27,0.15);color:#00261b;font-family:'Poppins',sans-serif;background:transparent">
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════ -->
+<script>
+/* ══════════════════════════════════════════════
+   PARTICLE ENGINE — reusable
+══════════════════════════════════════════════ */
+function createParticleSystem(canvas, opts) {
+  opts = Object.assign({
+    count: 60,
+    colors: ['rgba(159,247,0,', 'rgba(255,255,255,', 'rgba(100,200,120,'],
+    shapes: ['cross', 'dot', 'circle', 'star'],
+    mouseRepel: true,
+    maxRepelDist: 110,
+    speedMultiplier: 1,
+    sizeRange: [2, 8],
+  }, opts);
+
+  const ctx = canvas.getContext('2d');
+  let W, H, dpr;
+  let mouseX = -9999, mouseY = -9999;
+  const particles = [];
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const parent = canvas.parentElement;
+    W = parent.offsetWidth;
+    H = parent.offsetHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  class Particle {
+    constructor(boot) {
+      this.reset(boot);
+    }
+    reset(randomY) {
+      this.x = Math.random() * W;
+      this.y = randomY ? Math.random() * H : H + 10;
+      this.vx = (Math.random() - 0.5) * 0.4 * opts.speedMultiplier;
+      this.vy = -(Math.random() * 0.55 + 0.15) * opts.speedMultiplier;
+      this.size = opts.sizeRange[0] + Math.random() * (opts.sizeRange[1] - opts.sizeRange[0]);
+      this.life = 0;
+      this.maxLife = Math.random() * 280 + 120;
+      this.color = opts.colors[Math.floor(Math.random() * opts.colors.length)];
+      this.shape = opts.shapes[Math.floor(Math.random() * opts.shapes.length)];
+      this.rot = Math.random() * Math.PI * 2;
+      this.rotSpeed = (Math.random() - 0.5) * 0.025;
+      this.wobble = Math.random() * Math.PI * 2;
+      this.wobbleSpeed = 0.01 + Math.random() * 0.03;
+    }
+    update() {
+      this.life++;
+      this.wobble += this.wobbleSpeed;
+      this.rot += this.rotSpeed;
+
+      if (opts.mouseRepel) {
+        const dx = this.x - mouseX, dy = this.y - mouseY;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < opts.maxRepelDist && d > 0) {
+          const f = ((opts.maxRepelDist - d) / opts.maxRepelDist) ** 2 * 3;
+          const a = Math.atan2(dy, dx);
+          this.vx += Math.cos(a) * f;
+          this.vy += Math.sin(a) * f;
+        }
+      }
+
+      this.vx += Math.sin(this.wobble) * 0.012;
+      this.vx *= 0.97;
+      this.vy *= 0.984;
+      this.vy -= 0.008 + Math.random() * 0.008;
+      this.x += this.vx;
+      this.y += this.vy;
+
+      if (this.y < -15 || this.x < -20 || this.x > W + 20 || this.life > this.maxLife) {
+        this.reset(false);
+      }
+    }
+    draw() {
+      const p = this.life / this.maxLife;
+      const alpha = p < 0.12 ? p / 0.12 : p > 0.72 ? 1 - (p - 0.72) / 0.28 : 1;
+      const c = this.color + (alpha * 0.8) + ')';
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rot);
+      ctx.globalAlpha = alpha;
+
+      if (this.shape === 'cross') {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = Math.max(0.8, this.size * 0.3);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-this.size, 0); ctx.lineTo(this.size, 0);
+        ctx.moveTo(0, -this.size * 1.35); ctx.lineTo(0, this.size * 1.35);
+        ctx.stroke();
+      } else if (this.shape === 'star') {
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          const r = i % 2 === 0 ? this.size : this.size * 0.42;
+          i === 0 ? ctx.moveTo(Math.cos(a)*r, Math.sin(a)*r) : ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else if (this.shape === 'circle') {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = Math.max(0.6, this.size * 0.22);
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 0.65, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  resize();
+  for (let i = 0; i < opts.count; i++) particles.push(new Particle(true));
+
+  // Mouse tracking on parent
+  const parent = canvas.parentElement;
+  if (opts.mouseRepel) {
+    parent.addEventListener('mousemove', e => {
+      const r = parent.getBoundingClientRect();
+      mouseX = e.clientX - r.left;
+      mouseY = e.clientY - r.top;
+    });
+    parent.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+    parent.addEventListener('touchmove', e => {
+      const r = parent.getBoundingClientRect();
+      mouseX = e.touches[0].clientX - r.left;
+      mouseY = e.touches[0].clientY - r.top;
+    }, { passive: true });
+    parent.addEventListener('touchend', () => { mouseX = -9999; mouseY = -9999; });
+  }
+
+  window.addEventListener('resize', resize);
+
+  let running = true;
+  (function loop() {
+    if (!running) return;
+    ctx.clearRect(0, 0, W, H);
+
+    // Mouse glow
+    if (opts.mouseRepel && mouseX > 0) {
+      const g = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, opts.maxRepelDist);
+      g.addColorStop(0, 'rgba(159,247,0,0.04)');
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    for (const p of particles) { p.update(); p.draw(); }
+    requestAnimationFrame(loop);
+  })();
+
+  return { stop: () => { running = false; } };
+}
+
+/* ── Init Hero Particles ── */
+const heroCanvas = document.getElementById('sp-canvas');
+if (heroCanvas) {
+  createParticleSystem(heroCanvas, {
+    count: 90,
+    mouseRepel: true,
+    maxRepelDist: 130,
+    speedMultiplier: 1,
+    sizeRange: [2, 9],
+    colors: ['rgba(159,247,0,', 'rgba(255,255,255,', 'rgba(100,200,120,', 'rgba(200,255,150,'],
+    shapes: ['cross', 'dot', 'circle', 'star'],
+  });
+}
+
+/* ── Hero mouse glow ── */
+const heroWrap = document.querySelector('.hero-wrap');
+const mouseGlow = document.getElementById('hero-mouse-glow');
+if (heroWrap && mouseGlow) {
+  heroWrap.addEventListener('mousemove', e => {
+    const r = heroWrap.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%';
+    const y = ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%';
+    mouseGlow.style.setProperty('--mx', x);
+    mouseGlow.style.setProperty('--my', y);
+    mouseGlow.style.opacity = '1';
+  });
+  heroWrap.addEventListener('mouseleave', () => { mouseGlow.style.opacity = '0'; });
+}
+
+/* ── Init CTA Particles ── */
+const ctaCanvas = document.getElementById('cta-canvas');
+if (ctaCanvas) {
+  createParticleSystem(ctaCanvas, {
+    count: 50,
+    mouseRepel: false,
+    speedMultiplier: 0.7,
+    sizeRange: [1.5, 6],
+    colors: ['rgba(159,247,0,', 'rgba(255,255,255,'],
+    shapes: ['cross', 'dot', 'circle'],
+  });
+}
+
+/* ── Init Sidebar Particles ── */
+const sidebarCanvas = document.getElementById('sidebar-canvas');
+if (sidebarCanvas) {
+  createParticleSystem(sidebarCanvas, {
+    count: 25,
+    mouseRepel: false,
+    speedMultiplier: 0.5,
+    sizeRange: [1, 4],
+    colors: ['rgba(159,247,0,', 'rgba(255,255,255,'],
+    shapes: ['cross', 'dot'],
+  });
+}
+
+/* ══════════════════════════════════════════════
+   BENTO CARD 3D TILT
+══════════════════════════════════════════════ */
+document.querySelectorAll('.bento-card').forEach(card => {
+  const shine = card.querySelector('.card-shine');
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    const rx = (y - 0.5) * 10;
+    const ry = (x - 0.5) * -10;
+    card.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) scale(1.01)`;
+    if (shine) {
+      shine.style.setProperty('--mx', (x * 100) + '%');
+      shine.style.setProperty('--my', (y * 100) + '%');
+    }
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+
+/* ══════════════════════════════════════════════
+   AUDIO PLAY DISPATCH
+══════════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.js-play-btn');
+  if (!btn) return;
+  e.preventDefault();
+  const { audioUrl, title, host, color } = btn.dataset;
+  if (!audioUrl) return;
+  document.dispatchEvent(new CustomEvent('sp:play', {
+    detail: { audioUrl, title, host: host || 'The SafePlace by K', color: color || '#00261b' }
+  }));
+});
+
+/* ══════════════════════════════════════════════
+   CAROUSEL
+══════════════════════════════════════════════ */
+(function() {
+  const grid = document.getElementById('podcast-carousel');
+  const prevBtn = document.getElementById('carousel-prev');
+  const nextBtn = document.getElementById('carousel-next');
+  if (!grid || !prevBtn || !nextBtn) return;
+
+  const cards = Array.from(grid.querySelectorAll('article'));
+  let page = 0;
+
+  function perPage() {
+    if (window.innerWidth >= 1280) return 3;
+    if (window.innerWidth >= 768) return 2;
+    return 1;
+  }
+
+  function render() {
+    const pp = perPage();
+    const maxPage = Math.max(0, Math.ceil(cards.length / pp) - 1);
+    page = Math.min(page, maxPage);
+    cards.forEach((c, i) => {
+      c.style.display = (i >= page * pp && i < (page + 1) * pp) ? '' : 'none';
+    });
+    prevBtn.style.opacity = page === 0 ? '0.35' : '';
+    nextBtn.style.opacity = page >= maxPage ? '0.35' : '';
+    prevBtn.disabled = page === 0;
+    nextBtn.disabled = page >= maxPage;
+  }
+
+  prevBtn.addEventListener('click', () => { page--; render(); });
+  nextBtn.addEventListener('click', () => { page++; render(); });
+  window.addEventListener('resize', render);
+  render();
+})();
+
+/* ══════════════════════════════════════════════
+   REMINDER MODAL
+══════════════════════════════════════════════ */
+(function() {
+  const modal = document.getElementById('reminder-modal');
+  const liveTitle = document.getElementById('rm-live-title');
+  const emailInput = document.getElementById('rm-email');
+  const feedback = document.getElementById('rm-feedback');
+  const confirmBtn = document.getElementById('rm-confirm');
+  const closeBtn = document.getElementById('rm-close');
+  if (!modal) return;
+
+  function open(title) {
+    modal.classList.add('open');
+    if (liveTitle) liveTitle.textContent = title || '';
+    if (emailInput) { emailInput.value = ''; setTimeout(() => emailInput.focus(), 60); }
+    if (feedback) { feedback.textContent = ''; feedback.classList.add('hidden'); }
+  }
+  function close() { modal.classList.remove('open'); }
+
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.js-reminder-btn');
+    if (btn) open(btn.dataset.title);
+  });
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => {
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (!email || !email.includes('@')) {
+        if (feedback) {
+          feedback.textContent = 'Veuillez entrer une adresse e-mail valide.';
+          feedback.className = 'text-sm';
+          feedback.style.color = '#dc2626';
+          feedback.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const csrf = document.cookie.match(/csrftoken=([^;]+)/);
+      fetch('{% url "contact" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrf ? csrf[1] : '',
+        },
+        body: new URLSearchParams({
+          first_name: '', last_name: '',
+          email,
+          subject: 'Rappel Live',
+          message: 'Je souhaite être rappelé(e) pour : ' + (liveTitle ? liveTitle.textContent : ''),
+        }),
+      })
+      .then(() => {
+        if (feedback) {
+          feedback.innerHTML = '✓ Votre demande de rappel a bien été envoyée !';
+          feedback.className = 'text-sm';
+          feedback.style.color = '#416900';
+          feedback.classList.remove('hidden');
+        }
+        setTimeout(close, 2000);
+      })
+      .catch(() => {
+        if (feedback) {
+          feedback.textContent = 'Une erreur est survenue. Réessayez.';
+          feedback.className = 'text-sm';
+          feedback.style.color = '#dc2626';
+          feedback.classList.remove('hidden');
+        }
+      });
+    });
+  }
+})();
+
+/* ══════════════════════════════════════════════
+   SCROLL REVEAL
+══════════════════════════════════════════════ */
+(function() {
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.sp-reveal').forEach(el => el.classList.add('visible'));
+    return;
+  }
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        entry.target.style.transitionDelay = (i * 0.05) + 's';
+        entry.target.classList.add('visible');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.sp-reveal').forEach(el => obs.observe(el));
+})();
+
+/* ══════════════════════════════════════════════
+   BENTO CARDS — Particles init
+   Chaque cadre vert reçoit son propre système
+══════════════════════════════════════════════ */
+(function() {
+  // Wait for layout so dimensions are accurate
+  function initBentoParticles() {
+    document.querySelectorAll('.bento-particle-canvas').forEach((canvas, idx) => {
+      const card = canvas.parentElement;
+      const W = card.offsetWidth;
+      const H = card.offsetHeight;
+      if (!W || !H) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      // Slightly different feel per card
+      const configs = [
+        { count: 35, speed: 1,    size: [1.5, 6] },   // Prédication (large)
+        { count: 18, speed: 0.75, size: [1, 4.5] },   // Témoignages
+        { count: 18, speed: 0.75, size: [1, 4.5] },   // Louange
+        { count: 22, speed: 0.8,  size: [1, 5] },     // Famille (wide)
+      ];
+      const cfg = configs[idx] || configs[0];
+
+      const COLORS = ['rgba(159,247,0,', 'rgba(255,255,255,', 'rgba(100,220,130,'];
+      const SHAPES = ['cross', 'dot', 'circle', 'star'];
+
+      let mouseX = -9999, mouseY = -9999;
+
+      class P {
+        constructor(boot) { this.reset(boot); }
+        reset(randomY) {
+          this.x = Math.random() * W;
+          this.y = randomY ? Math.random() * H : H + 8;
+          this.vx = (Math.random() - 0.5) * 0.35 * cfg.speed;
+          this.vy = -(Math.random() * 0.5 + 0.15) * cfg.speed;
+          this.size = cfg.size[0] + Math.random() * (cfg.size[1] - cfg.size[0]);
+          this.life = 0;
+          this.maxLife = 180 + Math.random() * 200;
+          this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+          this.shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+          this.rot = Math.random() * Math.PI * 2;
+          this.rotS = (Math.random() - 0.5) * 0.025;
+          this.wob = Math.random() * Math.PI * 2;
+          this.wobS = 0.015 + Math.random() * 0.025;
+        }
+        update() {
+          this.life++; this.wob += this.wobS; this.rot += this.rotS;
+          // Mouse repel
+          const dx = this.x - mouseX, dy = this.y - mouseY;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d < 80 && d > 0) {
+            const f = ((80 - d) / 80) ** 2 * 2.5;
+            const a = Math.atan2(dy, dx);
+            this.vx += Math.cos(a) * f;
+            this.vy += Math.sin(a) * f;
+          }
+          this.vx += Math.sin(this.wob) * 0.01;
+          this.vx *= 0.97; this.vy *= 0.984;
+          this.vy -= 0.006 + Math.random() * 0.006;
+          this.x += this.vx; this.y += this.vy;
+          if (this.y < -10 || this.x < -15 || this.x > W+15 || this.life > this.maxLife) this.reset(false);
+        }
+        draw() {
+          const p = this.life / this.maxLife;
+          const alpha = p < 0.12 ? p/0.12 : p > 0.72 ? 1-(p-0.72)/0.28 : 1;
+          const c = this.color + (alpha * 0.75) + ')';
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.rot);
+          ctx.globalAlpha = alpha;
+          if (this.shape === 'cross') {
+            ctx.strokeStyle = c; ctx.lineWidth = Math.max(0.7, this.size*0.3); ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-this.size,0); ctx.lineTo(this.size,0);
+            ctx.moveTo(0,-this.size*1.35); ctx.lineTo(0,this.size*1.35);
+            ctx.stroke();
+          } else if (this.shape === 'star') {
+            ctx.fillStyle = c; ctx.beginPath();
+            for (let i=0;i<8;i++){const a=(i/8)*Math.PI*2,r=i%2===0?this.size:this.size*0.42;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+            ctx.closePath(); ctx.fill();
+          } else if (this.shape === 'circle') {
+            ctx.strokeStyle = c; ctx.lineWidth = Math.max(0.5, this.size*0.22);
+            ctx.beginPath(); ctx.arc(0,0,this.size*0.65,0,Math.PI*2); ctx.stroke();
+          } else {
+            ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0,0,this.size*0.45,0,Math.PI*2); ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      const particles = [];
+      for (let i = 0; i < cfg.count; i++) particles.push(new P(true));
+
+      // Mouse tracking on the card
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        mouseX = e.clientX - r.left;
+        mouseY = e.clientY - r.top;
+      });
+      card.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+
+      // Resize
+      window.addEventListener('resize', () => {
+        const nW = card.offsetWidth, nH = card.offsetHeight;
+        canvas.width  = nW * dpr;
+        canvas.height = nH * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      });
+
+      (function loop() {
+        ctx.clearRect(0, 0, W, H);
+        for (const p of particles) { p.update(); p.draw(); }
+        requestAnimationFrame(loop);
+      })();
+    });
+  }
+
+  // Run after layout
+  if (document.readyState === 'complete') {
+    initBentoParticles();
+  } else {
+    window.addEventListener('load', initBentoParticles);
+  }
+})();
+
+/* ════════════════════════════════════════════
+   CURSEUR MAGNÉTIQUE PERSONNALISÉ
+════════════════════════════════════════════ */
+(function() {
+  var dot  = document.getElementById('sp-cursor');
+  var ring = document.getElementById('sp-cursor-ring');
+  if (!dot) return;
+
+  var cx = -300, cy = -300;
+  var rx = -300, ry = -300;
+
+  document.addEventListener('mousemove', function(e) {
+    cx = e.clientX; cy = e.clientY;
+    dot.style.left = cx + 'px';
+    dot.style.top  = cy + 'px';
+  });
+
+  (function ringLoop() {
+    rx += (cx - rx) * 0.11;
+    ry += (cy - ry) * 0.11;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(ringLoop);
+  })();
+
+  var targets = document.querySelectorAll('a,button,.bento-card,.ep-card,.vid-card,.play-fab,.rec-row');
+  targets.forEach(function(el) {
+    el.addEventListener('mouseenter', function() { dot.classList.add('sp-hov'); });
+    el.addEventListener('mouseleave', function() { dot.classList.remove('sp-hov'); });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   HERO SOUND WAVE VISUALIZER
+════════════════════════════════════════════ */
+(function() {
+  var wave = document.getElementById('hero-wave');
+  if (!wave) return;
+  for (var i = 0; i < 60; i++) {
+    var b = document.createElement('div');
+    b.className = 'hw-bar';
+    var lo = (0.06 + Math.random() * 0.18).toFixed(2);
+    var hi = (0.35 + Math.random() * 0.65).toFixed(2);
+    var dur = (0.6 + Math.random() * 1.6).toFixed(2);
+    var del = (Math.random() * 1.8).toFixed(2);
+    b.style.cssText = '--lo:' + lo + ';--hi:' + hi + ';--dur:' + dur + 's;--del:' + del + 's';
+    wave.appendChild(b);
+  }
+})();
+
+/* ════════════════════════════════════════════
+   RIPPLE SUR LES BOUTONS
+════════════════════════════════════════════ */
+(function() {
+  document.querySelectorAll('.btn-lime,.btn-glass,.btn-outline,.play-fab').forEach(function(el) {
+    el.classList.add('sp-rh');
+    el.addEventListener('click', function(e) {
+      var r = el.getBoundingClientRect();
+      var rpl = document.createElement('span');
+      rpl.className = 'sp-rpl';
+      rpl.style.left = (e.clientX - r.left) + 'px';
+      rpl.style.top  = (e.clientY - r.top)  + 'px';
+      el.appendChild(rpl);
+      rpl.addEventListener('animationend', function() { rpl.remove(); });
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   TICKER DE VERSETS BIBLIQUES
+════════════════════════════════════════════ */
+(function() {
+  var el = document.getElementById('sp-ticker-inner');
+  if (!el) return;
+  var verses = [
+    '"Ne vous inquiétez de rien, mais en toute chose faites connaître vos besoins à Dieu." — Phil 4:6',
+    '"Je puis tout par celui qui me fortifie." — Phil 4:13',
+    '"Le Seigneur est mon berger, je ne manquerai de rien." — Ps 23:1',
+    '"Car je connais les projets que j\'ai formés sur vous, projets de paix." — Jér 29:11',
+    '"Venez à moi, vous tous qui êtes fatigués, et je vous donnerai du repos." — Matt 11:28',
+    '"La foi, c\'est la certitude des choses qu\'on espère." — Héb 11:1',
+    '"L\'Éternel te garde de tout mal, il garde ton âme." — Ps 121:7',
+    '"Cherchez premièrement le royaume et la justice de Dieu." — Matt 6:33',
+  ];
+  var all = verses.concat(verses);
+  all.forEach(function(v) {
+    var span = document.createElement('span');
+    span.className = 'sp-ti';
+    var dot = document.createElement('span');
+    dot.className = 'sp-ti-dot';
+    span.appendChild(dot);
+    span.appendChild(document.createTextNode(v));
+    el.appendChild(span);
+  });
+})();
+
+/* ════════════════════════════════════════════
+   TEXT SCRAMBLE SUR LES TITRES DE SECTION
+════════════════════════════════════════════ */
+(function() {
+  var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789*#@$';
+  document.querySelectorAll('.section-title').forEach(function(el) {
+    var original = el.textContent;
+    var raf = null;
+    var start = 0;
+    el.addEventListener('mouseenter', function() {
+      if (raf) cancelAnimationFrame(raf);
+      start = performance.now();
+      var dur = 520;
+      (function tick(now) {
+        var prog = Math.min((now - start) / dur, 1);
+        var revealed = Math.floor(prog * original.length);
+        var out = '';
+        for (var i = 0; i < original.length; i++) {
+          if (i < revealed || original[i] === ' ') { out += original[i]; }
+          else { out += CHARS[Math.floor(Math.random() * CHARS.length)]; }
+        }
+        el.textContent = out;
+        if (prog < 1) { raf = requestAnimationFrame(tick); }
+        else { el.textContent = original; raf = null; }
+      })(start);
+    });
+    el.addEventListener('mouseleave', function() {
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      el.textContent = original;
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   BOUTONS MAGNÉTIQUES
+════════════════════════════════════════════ */
+(function() {
+  document.querySelectorAll('.btn-lime').forEach(function(btn) {
+    btn.addEventListener('mousemove', function(e) {
+      var r = btn.getBoundingClientRect();
+      var ox = (e.clientX - r.left - r.width / 2) * 0.2;
+      var oy = (e.clientY - r.top - r.height / 2) * 0.2;
+      btn.style.transform = 'translate(' + ox + 'px,' + oy + 'px) translateY(-2px) scale(1.03)';
+    });
+    btn.addEventListener('mouseleave', function() { btn.style.transform = ''; });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   COMPTEUR ANIMÉ SUR LES ÉPISODES (HERO BADGE)
+════════════════════════════════════════════ */
+(function() {
+  function animCount(el, from, to, dur) {
+    var start = performance.now();
+    (function tick(now) {
+      var p = Math.min((now - start) / dur, 1);
+      var ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + (to - from) * ease);
+      if (p < 1) requestAnimationFrame(tick);
+    })(start);
+  }
+  var badge = document.getElementById('comment-count-badge');
+  if (badge) {
+    var val = parseInt(badge.textContent) || 0;
+    badge.textContent = '0';
+    setTimeout(function() { animCount(badge, 0, val, 900); }, 300);
+  }
+})();
+
+/* ════════════════════════════════════════════
+   EFFET SPOTLIGHT HOVER SUR ep-card / vid-card
+════════════════════════════════════════════ */
+(function() {
+  document.querySelectorAll('.ep-card,.vid-card').forEach(function(card) {
+    card.addEventListener('mousemove', function(e) {
+      var r = card.getBoundingClientRect();
+      var x = ((e.clientX - r.left) / r.width * 100).toFixed(1);
+      var y = ((e.clientY - r.top) / r.height * 100).toFixed(1);
+      card.style.background = 'radial-gradient(circle at ' + x + '% ' + y + '%, rgba(159,247,0,0.04) 0%, #fff 60%)';
+    });
+    card.addEventListener('mouseleave', function() { card.style.background = ''; });
+  });
+})();
+
+/* ════════════════════════════════════════════
+   STAGGER ENTRY DES CARDS PODCASTS/VIDÉOS
+════════════════════════════════════════════ */
+(function() {
+  var cards = document.querySelectorAll('.ep-card, .vid-card');
+  cards.forEach(function(c, i) {
+    c.style.opacity = '0';
+    c.style.transform = 'translateY(28px)';
+    c.style.transition = 'opacity .55s ease ' + (i * 0.08) + 's, transform .55s cubic-bezier(0.34,1.56,0.64,1) ' + (i * 0.08) + 's';
+  });
+  var obs2 = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        obs2.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  cards.forEach(function(c) { obs2.observe(c); });
+})();
+
+/* ════════════════════════════════════════════
+   SET CSS VARIABLES FROM DATA ATTRIBUTES
+════════════════════════════════════════════ */
+(function() {
+  document.querySelectorAll('.episode-cover').forEach(el => {
+    const color = el.dataset.coverColor;
+    if (color) {
+      el.style.setProperty('--cover-color', color);
+    }
+  });
+})();
+
+/* ══════════════════════════════════════════════
+   PARALLAX CROSSES on Hero
+══════════════════════════════════════════════ */
+(function() {
+  const hero = document.querySelector('.hero-wrap');
+  const crosses = hero ? hero.querySelectorAll('.cross-deco') : [];
+  if (!crosses.length) return;
+  let ticking = false;
+  document.addEventListener('mousemove', e => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const dx = (e.clientX - cx) / cx;
+      const dy = (e.clientY - cy) / cy;
+      crosses.forEach((el, i) => {
+        const d = 0.15 + (i % 3) * 0.12;
+        el.style.transform = `translate(${dx * 18 * d}px, ${dy * 18 * d}px)`;
+      });
+      ticking = false;
+    });
+  });
+})();
+</script>
+
+<div id="sp-cursor" aria-hidden="true"></div>
+<div id="sp-cursor-ring" aria-hidden="true"></div>
+
+{% endblock %}
