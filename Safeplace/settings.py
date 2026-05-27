@@ -28,7 +28,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-q3=+123_-!0of8m5-!v1t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-_allowed_hosts_raw = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,.railway.app,.vercel.app')
+_allowed_hosts_raw = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,.railway.app,.vercel.app,.onrender.com')
 if _allowed_hosts_raw.strip() == '*':
     ALLOWED_HOSTS = ['*']
 else:
