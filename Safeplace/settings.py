@@ -159,25 +159,23 @@ STATICFILES_DIRS  = [BASE_DIR / 'static']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ── Cloudinary — stockage media persistant ─────────────────────────────────────
-CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
-CLOUDINARY_API_KEY    = os.environ.get('CLOUDINARY_API_KEY', '')
-CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
-
-_use_cloudinary = all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET])
+_cld_name   = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+_cld_key    = os.environ.get('CLOUDINARY_API_KEY', '')
+_cld_secret = os.environ.get('CLOUDINARY_API_SECRET', '')
+_use_cloudinary = all([_cld_name, _cld_key, _cld_secret])
 
 if _use_cloudinary:
-    import cloudinary
-    cloudinary.config(
-        cloud_name=CLOUDINARY_CLOUD_NAME,
-        api_key=CLOUDINARY_API_KEY,
-        api_secret=CLOUDINARY_API_SECRET,
-        secure=True,
-    )
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _cld_name,
+        'API_KEY':    _cld_key,
+        'API_SECRET': _cld_secret,
+        'SECURE':     True,
+    }
     STORAGES = {
         'default':     {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'},
         'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
     }
-    MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/'
+    MEDIA_URL = f'https://res.cloudinary.com/{_cld_name}/'
 else:
     STORAGES = {
         'default':     {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
