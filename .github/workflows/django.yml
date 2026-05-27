@@ -50,6 +50,18 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-django pytest-cov
 
+    - name: Build broker URL from components
+      run: |
+        BROKER="${{ secrets.CELERY_BROKER_URL }}"
+        if [ -z "$BROKER" ]; then
+          BROKER="redis://$REDIS_HOST:$REDIS_PORT/0"
+        fi
+        echo "CELERY_BROKER_URL=$BROKER" >> $GITHUB_ENV
+        echo "CELERY_RESULT_BACKEND=$BROKER" >> $GITHUB_ENV
+      env:
+        REDIS_HOST: localhost
+        REDIS_PORT: "6379"
+
     - name: Run migrations
       env:
         POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'safeplace_test' }}
@@ -57,8 +69,6 @@ jobs:
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'test' }}
         POSTGRES_HOST: localhost
         POSTGRES_PORT: 5432
-        CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL || 'redis://localhost:6379/0' }}
-        CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND || 'redis://localhost:6379/0' }}
         SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key-for-ci-only' }}
       run: python manage.py migrate
 
@@ -69,8 +79,6 @@ jobs:
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'test' }}
         POSTGRES_HOST: localhost
         POSTGRES_PORT: 5432
-        CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL || 'redis://localhost:6379/0' }}
-        CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND || 'redis://localhost:6379/0' }}
         SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY || 'test-secret-key-for-ci-only' }}
       run: pytest --cov=podcastSafe --cov-report=xml
 
