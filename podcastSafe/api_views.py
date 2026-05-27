@@ -607,6 +607,7 @@ def subscription_delete(request, pk):
 @parser_classes([MultiPartParser, FormParser])
 def episode_upload_chunk(request, pk):
     """Upload par chunks pour les très gros fichiers vidéo"""
+    import tempfile
     try:
         episode = get_object_or_404(Episode, pk=pk)
         chunk = request.FILES.get('chunk')
@@ -618,7 +619,8 @@ def episode_upload_chunk(request, pk):
         if not chunk:
             return Response({'error': 'Aucun chunk fourni'}, status=400)
 
-        tmp_dir = os.path.join(settings.MEDIA_ROOT, '_chunks', upload_id)
+        # Utilise /tmp — toujours disponible et inscriptible sur Render/Linux
+        tmp_dir = os.path.join(tempfile.gettempdir(), '_sp_chunks', upload_id)
         os.makedirs(tmp_dir, exist_ok=True)
         chunk_path = os.path.join(tmp_dir, f'{chunk_index:06d}')
         with open(chunk_path, 'wb') as f:
@@ -628,9 +630,7 @@ def episode_upload_chunk(request, pk):
         if chunk_index == total_chunks - 1:
             year_month = datetime.now().strftime('%Y/%m')
             safe_name = ''.join(c if c.isalnum() or c in '._-' else '_' for c in filename)
-            tmp_assembled = os.path.join(settings.MEDIA_ROOT, '_assembled')
-            os.makedirs(tmp_assembled, exist_ok=True)
-            dest_path = os.path.join(tmp_assembled, safe_name)
+            dest_path = os.path.join(tempfile.gettempdir(), safe_name)
             with open(dest_path, 'wb') as outfile:
                 for i in range(total_chunks):
                     cp = os.path.join(tmp_dir, f'{i:06d}')
@@ -638,7 +638,6 @@ def episode_upload_chunk(request, pk):
                         shutil.copyfileobj(infile, outfile)
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
-            # Upload via le storage backend (Cloudinary ou disque local)
             from django.core.files import File
             upload_path = f'videos/{year_month}/{safe_name}'
             with open(dest_path, 'rb') as f:
@@ -653,7 +652,7 @@ def episode_upload_chunk(request, pk):
 
         return Response({'success': True, 'done': False, 'received': chunk_index + 1, 'total': total_chunks})
     except Exception as e:
-        logger.error(f"Error in episode_upload_chunk: {str(e)}")
+        logger.error(f"Error in episode_upload_chunk: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=500)
 
 
