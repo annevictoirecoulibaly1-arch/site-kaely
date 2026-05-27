@@ -247,13 +247,14 @@ SECURE_BROWSER_XSS_FILTER       = True
 X_FRAME_OPTIONS                 = 'DENY'
 SECURE_REFERRER_POLICY          = 'strict-origin-when-cross-origin'
 
-# HSTS + SSL redirect uniquement en production (jamais sur localhost)
+# HSTS uniquement en production — Railway gère le SSL au niveau proxy,
+# SECURE_SSL_REDIRECT doit rester False sinon le healthcheck interne (HTTP) reçoit un 301
 _is_local = any(h in ALLOWED_HOSTS for h in ('localhost', '127.0.0.1'))
 if not DEBUG and not _is_local:
     SECURE_HSTS_SECONDS            = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD            = True
-    SECURE_SSL_REDIRECT            = True
+    SECURE_SSL_REDIRECT            = False  # Railway termine le SSL au proxy
 
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
