@@ -14,6 +14,9 @@ urlpatterns = [
     path('episodes/<int:pk>/upload/', api_views.episode_upload_file, name='episode_upload_file'),
     path('episodes/<int:pk>/delete/', api_views.episode_delete, name='episode_delete'),
     path('categories/', api_views.categories_api, name='categories_api'),
+    path('categories/create/', api_views.category_create, name='category_create'),
+    path('categories/<int:pk>/update/', api_views.category_update, name='category_update'),
+    path('categories/<int:pk>/delete/', api_views.category_delete, name='category_delete'),
 
     # Analytics
     path('analytics/', api_views.analytics_data, name='analytics_data'),

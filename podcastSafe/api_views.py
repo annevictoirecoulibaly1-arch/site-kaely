@@ -337,11 +337,49 @@ def episode_delete(request, pk):
 @api_view(['GET'])
 @permission_classes([IsDashboardOrAdmin])
 def categories_api(request):
-    """Liste des catégories"""
     cats = Category.objects.all()
     return Response({
-        'categories': [{'id': c.id, 'name': c.name, 'icon': c.icon} for c in cats]
+        'categories': [{'id': c.id, 'name': c.name, 'icon': c.icon, 'color': c.color, 'for_type': c.for_type} for c in cats]
     })
+
+
+@api_view(['POST'])
+@permission_classes([IsDashboardOrAdmin])
+def category_create(request):
+    name = request.data.get('name', '').strip()
+    if not name:
+        return Response({'error': 'Nom requis'}, status=400)
+    cat = Category.objects.create(
+        name=name,
+        icon=request.data.get('icon', 'church'),
+        color=request.data.get('color', '#00261b'),
+        for_type=request.data.get('for_type', 'all'),
+    )
+    return Response({'category': {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'color': cat.color, 'for_type': cat.for_type}}, status=201)
+
+
+@api_view(['PUT'])
+@permission_classes([IsDashboardOrAdmin])
+def category_update(request, pk):
+    try:
+        cat = Category.objects.get(pk=pk)
+    except Category.DoesNotExist:
+        return Response({'error': 'Introuvable'}, status=404)
+    for field in ('name', 'icon', 'color', 'for_type'):
+        if field in request.data:
+            setattr(cat, field, request.data[field])
+    cat.save()
+    return Response({'category': {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'color': cat.color, 'for_type': cat.for_type}})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsDashboardOrAdmin])
+def category_delete(request, pk):
+    try:
+        Category.objects.get(pk=pk).delete()
+    except Category.DoesNotExist:
+        return Response({'error': 'Introuvable'}, status=404)
+    return Response({'ok': True})
 
 
 # ──────────────────────────────────────────────
