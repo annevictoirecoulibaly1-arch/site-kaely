@@ -5,6 +5,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model, login
+from django.db import OperationalError, ProgrammingError
+import logging
 import os
 import json
 
@@ -13,6 +15,7 @@ from .auth import owner_required, subscriber_required
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 from django.http import Http404, HttpResponse
 import mimetypes
@@ -21,15 +24,22 @@ from urllib.parse import urlparse
 
 
 def home(request):
-    published = Episode.objects.filter(is_published=True)
-    latest_episodes = published.filter(episode_type='podcast')[:6]
-    latest_videos = published.filter(episode_type='video')[:4]
-    live_streams = LiveStream.objects.filter(status='live')[:4]
-    featured = published.first()
-    categories = Category.objects.all()
-    category_ids_by_slug = {}
-    for cat in categories:
-        category_ids_by_slug[slugify(cat.name)] = str(cat.id)
+    try:
+        published = Episode.objects.filter(is_published=True)
+        latest_episodes = list(published.filter(episode_type='podcast')[:6])
+        latest_videos = list(published.filter(episode_type='video')[:4])
+        live_streams = list(LiveStream.objects.filter(status='live')[:4])
+        featured = published.first()
+        categories = list(Category.objects.all())
+        category_ids_by_slug = {slugify(cat.name): str(cat.id) for cat in categories}
+    except (OperationalError, ProgrammingError) as e:
+        logger.error('home: DB error: %s', e)
+        latest_episodes = []
+        latest_videos = []
+        live_streams = []
+        featured = None
+        categories = []
+        category_ids_by_slug = {}
     context = {
         'latest_episodes': latest_episodes,
         'latest_videos': latest_videos,
