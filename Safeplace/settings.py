@@ -174,7 +174,7 @@ MAIN_SITE_URL    = os.environ.get('MAIN_SITE_URL', 'http://127.0.0.1:8000')
 MAIN_API_URL     = os.environ.get('MAIN_API_URL',  'http://127.0.0.1:8000/api/v1/')
 
 DASHBOARD_API_KEY = config('DASHBOARD_API_KEY', default='safeplace_secret_dashboard_key_2026')
-DASHBOARD_NETLIFY_URL = os.environ.get('DASHBOARD_NETLIFY_URL', 'https://dashboard-safeplace.netlify.app')
+DASHBOARD_NETLIFY_URL = os.environ.get('DASHBOARD_NETLIFY_URL', 'https://poetic-torte-67284f.netlify.app')
 DASHBOARD_URL = os.environ.get('DASHBOARD_URL', DASHBOARD_NETLIFY_URL)
 
 # Normalize origins for CORS (no path allowed)
