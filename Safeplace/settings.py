@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'cloudinary_storage',
+    'cloudinary',
     'podcastSafe',
 ]
 
@@ -154,15 +156,35 @@ USE_TZ        = True
 STATIC_URL        = '/static/'
 STATIC_ROOT       = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS  = [BASE_DIR / 'static']
-STORAGES = {
-    'default':     {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
-}
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ── Fichiers media (uploads) ───────────────────────────────────────────────────
-MEDIA_URL  = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# ── Cloudinary — stockage media persistant ─────────────────────────────────────
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+CLOUDINARY_API_KEY    = os.environ.get('CLOUDINARY_API_KEY', '')
+CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
+
+_use_cloudinary = all([CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET])
+
+if _use_cloudinary:
+    import cloudinary
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True,
+    )
+    STORAGES = {
+        'default':     {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+    }
+    MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/'
+else:
+    STORAGES = {
+        'default':     {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+    }
+    MEDIA_URL  = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Taille max par chunk (10 MB) — les gros fichiers arrivent chunk par chunk
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
