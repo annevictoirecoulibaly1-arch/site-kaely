@@ -192,20 +192,8 @@ DASHBOARD_ORIGIN = get_origin(DASHBOARD_URL)
 SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
 
 # ── CORS Configuration ───────────────────────────────────────────────────────
-# En mode DEBUG on accepte toutes les origines (dashboard local/externe).
-# En production, lister les origines autorisées via CORS_EXTRA_ORIGINS (CSV).
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    _extra_origins = [
-        o.strip() for o in os.environ.get('CORS_EXTRA_ORIGINS', '').split(',') if o.strip()
-    ]
-    CORS_ALLOWED_ORIGINS = list(dict.fromkeys(filter(None, [
-        DASHBOARD_NETLIFY_ORIGIN,
-        DASHBOARD_ORIGIN,
-        'http://127.0.0.1:8001',
-        'http://localhost:8001',
-    ] + _extra_origins)))
+# Dashboard protégé par API key — on accepte toutes les origines HTTPS.
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
