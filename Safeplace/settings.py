@@ -28,11 +28,11 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-q3=+123_-!0of8m5-!v1t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,.railway.app,.vercel.app').split(',')
-    if host.strip() and host.strip() != '*'
-]
+_allowed_hosts_raw = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,.railway.app,.vercel.app')
+if _allowed_hosts_raw.strip() == '*':
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_raw.split(',') if h.strip()]
 
 # Support for Vercel Proxy
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
