@@ -2,6 +2,40 @@
    SafePlace — Global Styles
    ═══════════════════════════════════════════════ */
 
+/* ── Full-page layout + no horizontal scroll ── */
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+body {
+  width: 100%;
+  min-height: 100svh;
+  overflow-x: hidden;
+}
+
+/* ── Small phone adjustments (≤ 390px) ── */
+@media (max-width: 390px) {
+  .btn-lime, .btn-glass {
+    padding: 10px 18px;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+  .btn-outline {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+  }
+  .section-title {
+    font-size: 1.25rem !important;
+  }
+  .sp-section {
+    padding: 1.75rem 0;
+  }
+  .pill-badge {
+    font-size: 0.62rem;
+    padding: 5px 10px;
+  }
+}
+
 /* ── Buttons ── */
 .btn-lime {
   display: inline-flex;
