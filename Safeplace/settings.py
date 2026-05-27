@@ -88,8 +88,7 @@ WSGI_APPLICATION = 'Safeplace.wsgi.application'
 
 
 # ── Base de données ────────────────────────────────────────────────────────────
-# Support des déploiements sur Supabase / PostgreSQL via `DATABASE_URL`
-# Exemple de `DATABASE_URL`: postgres://user:password@host:5432/dbname?sslmode=require
+# Lire DATABASE_URL depuis l'environnement (ex: variable Heroku/Railway/Supabase)
 DATABASE_URL = os.getenv('DATABASE_URL') or os.getenv('SUPABASE_DB_URL')
 if DATABASE_URL:
     parsed = urlparse(DATABASE_URL)
@@ -259,14 +258,9 @@ LOGIN_REDIRECT_URL = 'home'
 
 
 # ── Celery ─────────────────────────────────────────────────────────────────────
-_redis_host = os.environ.get('REDIS_HOST', 'localhost')
-_redis_port = os.environ.get('REDIS_PORT', '6379')
-_redis_pass = os.environ.get('REDIS_PASSWORD', '')
-_redis_auth = f':{_redis_pass}@' if _redis_pass else ''
-_redis_url   = f'redis://{_redis_auth}{_redis_host}:{_redis_port}/0'
-
-CELERY_BROKER_URL     = os.environ.get('CELERY_BROKER_URL',    _redis_url)
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', _redis_url)
+# CELERY_BROKER_URL doit être défini dans l'environnement en production
+CELERY_BROKER_URL     = config('CELERY_BROKER_URL',    default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT  = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
