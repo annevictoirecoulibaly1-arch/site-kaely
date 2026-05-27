@@ -165,6 +165,8 @@ _cld_key    = os.environ.get('CLOUDINARY_API_KEY', '')
 _cld_secret = os.environ.get('CLOUDINARY_API_SECRET', '')
 _use_cloudinary = all([_cld_name, _cld_key, _cld_secret])
 
+MEDIA_ROOT = BASE_DIR / 'media'  # toujours défini pour le stockage temp des chunks
+
 if _use_cloudinary:
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': _cld_name,
@@ -176,7 +178,7 @@ if _use_cloudinary:
         'default':     {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'},
         'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
     }
-    MEDIA_URL = f'https://res.cloudinary.com/{_cld_name}/'
+    MEDIA_URL = '/media/'
 else:
     STORAGES = {
         'default':     {'BACKEND': 'django.core.files.storage.FileSystemStorage'},

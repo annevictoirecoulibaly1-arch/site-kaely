@@ -627,10 +627,10 @@ def episode_upload_chunk(request, pk):
 
         if chunk_index == total_chunks - 1:
             year_month = datetime.now().strftime('%Y/%m')
-            dest_dir = os.path.join(settings.MEDIA_ROOT, 'videos', year_month)
-            os.makedirs(dest_dir, exist_ok=True)
             safe_name = ''.join(c if c.isalnum() or c in '._-' else '_' for c in filename)
-            dest_path = os.path.join(dest_dir, safe_name)
+            tmp_assembled = os.path.join(settings.MEDIA_ROOT, '_assembled')
+            os.makedirs(tmp_assembled, exist_ok=True)
+            dest_path = os.path.join(tmp_assembled, safe_name)
             with open(dest_path, 'wb') as outfile:
                 for i in range(total_chunks):
                     cp = os.path.join(tmp_dir, f'{i:06d}')
@@ -638,10 +638,17 @@ def episode_upload_chunk(request, pk):
                         shutil.copyfileobj(infile, outfile)
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
-            relative = os.path.relpath(dest_path, settings.MEDIA_ROOT).replace(os.sep, '/')
-            episode.video_file.name = relative
-            episode.save(update_fields=['video_file'])
-            url = request.build_absolute_uri(settings.MEDIA_URL + relative)
+            # Upload via le storage backend (Cloudinary ou disque local)
+            from django.core.files import File
+            upload_path = f'videos/{year_month}/{safe_name}'
+            with open(dest_path, 'rb') as f:
+                episode.video_file.save(upload_path, File(f), save=True)
+            try:
+                os.remove(dest_path)
+            except OSError:
+                pass
+
+            url = episode.video_file.url
             return Response({'success': True, 'done': True, 'url': url})
 
         return Response({'success': True, 'done': False, 'received': chunk_index + 1, 'total': total_chunks})
