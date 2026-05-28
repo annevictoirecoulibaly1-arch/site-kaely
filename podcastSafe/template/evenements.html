@@ -1,0 +1,633 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Événements — The SafePlace by K{% endblock %}
+{% block meta_description %}Dons, cérémonies, conférences et moments de prière — rejoignez la communauté SafePlace{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HERO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-hero {
+  position: relative;
+  background: #00261b;
+  overflow: hidden;
+  padding: 88px 24px 80px;
+}
+.ev-hero__dots {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(rgba(159,247,0,.18) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+.ev-hero__glow {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  animation: glowFloat linear infinite;
+}
+@keyframes glowFloat {
+  0%,100% { transform: translateY(0) scale(1); opacity: .6; }
+  50%      { transform: translateY(-44px) scale(1.06); opacity: 1; }
+}
+.ev-hero__inner  { position: relative; z-index: 2; max-width: 1440px; margin: 0 auto; }
+.ev-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(159,247,0,.1); border: 1px solid rgba(159,247,0,.3);
+  border-radius: 999px; padding: 6px 20px;
+  color: #9ff700; font-size: 12px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; margin-bottom: 28px;
+}
+.ev-hero__title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(40px, 7vw, 90px);
+  font-weight: 900; color: #fff; line-height: 1; margin-bottom: 20px;
+}
+.ev-hero__title .accent {
+  background: linear-gradient(100deg, #9ff700 0%, #a0d1bc 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.ev-hero__sub {
+  color: rgba(255,255,255,.62); font-size: 18px;
+  max-width: 600px; line-height: 1.7; margin-bottom: 52px;
+}
+.ev-stats        { display: flex; gap: 16px; flex-wrap: wrap; }
+.ev-stat {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(14px); border-radius: 20px;
+  padding: 22px 32px; text-align: center;
+  transition: transform .3s, background .3s;
+  cursor: default;
+}
+.ev-stat:hover   { background: rgba(255,255,255,.13); transform: translateY(-3px); }
+.ev-stat__n      { font-family: 'Montserrat', sans-serif; font-size: 40px; font-weight: 900; color: #9ff700; line-height: 1; }
+.ev-stat__l      { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 5px; text-transform: uppercase; letter-spacing: .07em; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FILTER BAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-bar {
+  position: sticky; top: 72px; z-index: 30;
+  background: rgba(249,249,247,.95); backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0,38,27,.07); padding: 12px 24px;
+}
+.ev-bar__inner {
+  display: flex; gap: 8px; overflow-x: auto;
+  scrollbar-width: none; max-width: 1440px; margin: 0 auto;
+  padding-bottom: 2px;
+}
+.ev-bar__inner::-webkit-scrollbar { display: none; }
+.ev-pill {
+  flex-shrink: 0; padding: 9px 20px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  text-decoration: none; border: 2px solid transparent;
+  white-space: nowrap; display: inline-flex; align-items: center; gap: 7px;
+  transition: all .22s;
+}
+.ev-pill--off {
+  background: rgba(0,38,27,.05); color: #414944;
+  border-color: rgba(0,38,27,.11);
+}
+.ev-pill--off:hover { border-color: rgba(0,38,27,.3); color: #00261b; background: rgba(0,38,27,.09); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MAIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-main { max-width: 1440px; margin: 0 auto; padding: 52px 24px 72px; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FEATURED CARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-feat {
+  position: relative; border-radius: 28px; overflow: hidden;
+  min-height: 380px; margin-bottom: 60px;
+  display: flex; align-items: flex-end; cursor: pointer;
+  transition: transform .38s cubic-bezier(.34,1.56,.64,1), box-shadow .38s;
+}
+.ev-feat:hover   { transform: translateY(-8px) scale(1.008); box-shadow: 0 36px 90px rgba(0,0,0,.24); }
+.ev-feat__bg     { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ev-feat__veil   { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.12) 65%, transparent); }
+.ev-feat__pin {
+  position: absolute; top: 24px; left: 24px;
+  background: #9ff700; color: #001a00; border-radius: 999px;
+  padding: 7px 20px; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .1em;
+  display: flex; align-items: center; gap: 7px;
+}
+.ev-feat__body   { position: relative; z-index: 2; padding: 36px 40px; width: 100%; }
+.ev-feat__typetag {
+  display: inline-block; background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.28); border-radius: 999px;
+  padding: 5px 18px; font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,.9); margin-bottom: 14px; backdrop-filter: blur(8px);
+}
+.ev-feat__title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(24px, 3.5vw, 44px); font-weight: 900;
+  color: #fff; line-height: 1.13; margin-bottom: 16px;
+}
+.ev-feat__metas  { display: flex; flex-wrap: wrap; gap: 18px; color: rgba(255,255,255,.7); font-size: 14px; }
+.ev-feat__meta   { display: flex; align-items: center; gap: 6px; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION TITLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-sec-head {
+  font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 900;
+  color: #00261b; margin-bottom: 28px;
+  display: flex; align-items: center; gap: 12px;
+}
+.ev-sec-head::after {
+  content: ''; flex: 1; height: 2px;
+  background: linear-gradient(to right, rgba(0,38,27,.15), transparent);
+  border-radius: 999px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   EVENTS GRID
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px; margin-bottom: 60px;
+}
+@media (max-width: 640px) { .ev-grid { grid-template-columns: 1fr; } }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   EVENT CARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-card {
+  background: #fff; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 2px 20px rgba(0,38,27,.07); position: relative;
+  transition: transform .38s cubic-bezier(.34,1.56,.64,1), box-shadow .38s;
+  opacity: 0; animation: cardIn .5s ease forwards;
+}
+.ev-card:hover   { transform: translateY(-9px) scale(1.017); box-shadow: 0 24px 56px rgba(0,38,27,.16); }
+@keyframes cardIn { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+.ev-card:nth-child(1) { animation-delay:.04s }
+.ev-card:nth-child(2) { animation-delay:.10s }
+.ev-card:nth-child(3) { animation-delay:.16s }
+.ev-card:nth-child(4) { animation-delay:.22s }
+.ev-card:nth-child(5) { animation-delay:.28s }
+.ev-card:nth-child(6) { animation-delay:.34s }
+.ev-card:nth-child(7) { animation-delay:.40s }
+.ev-card:nth-child(8) { animation-delay:.46s }
+.ev-card:nth-child(9) { animation-delay:.52s }
+
+.ev-card--past   { filter: saturate(.45) brightness(.97); }
+.ev-card--past:hover { filter: saturate(.7) brightness(1); }
+
+/* header */
+.ev-card__hdr {
+  position: relative; height: 170px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.ev-card__hdr::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 45%, rgba(0,0,0,.28));
+}
+.ev-card__hdr-bg-icon  { font-size: 110px; color: rgba(255,255,255,.15); position: absolute; right: -18px; bottom: -18px; line-height: 1; user-select:none; }
+.ev-card__hdr-main-icon { font-size: 54px; color: rgba(255,255,255,.95); position: relative; z-index: 2; filter: drop-shadow(0 4px 14px rgba(0,0,0,.35)); }
+
+/* date stamp */
+.ev-card__stamp {
+  position: absolute; bottom: -1px; right: 20px; z-index: 6;
+  background: #fff; border-radius: 14px 14px 0 0;
+  padding: 10px 15px 8px; text-align: center;
+  box-shadow: 0 -4px 20px rgba(0,38,27,.1); min-width: 60px;
+}
+.ev-card__stamp-day   { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 900; line-height: 1; color: #00261b; }
+.ev-card__stamp-month { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; margin-top: 2px; }
+
+/* status tag */
+.ev-card__stag {
+  position: absolute; top: 14px; left: 14px; z-index: 6;
+  border-radius: 999px; padding: 5px 13px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em;
+  display: flex; align-items: center; gap: 5px; backdrop-filter: blur(8px);
+}
+.ev-card__stag--upcoming { background: rgba(159,247,0,.92); color: #001a00; }
+.ev-card__stag--today    { background: rgba(255,255,255,.92); color: #c62828; }
+.ev-card__stag--past     { background: rgba(0,0,0,.42); color: rgba(255,255,255,.85); }
+
+/* body */
+.ev-card__body  { padding: 22px 22px 20px; }
+.ev-card__chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+  padding: 4px 13px; border-radius: 999px; margin-bottom: 11px;
+}
+.ev-card__title {
+  font-family: 'Montserrat', sans-serif; font-size: 17px; font-weight: 800;
+  color: #1a1c1b; line-height: 1.3; margin-bottom: 10px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ev-card__metas { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.ev-card__meta  { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #414944; }
+.ev-card__desc  {
+  font-size: 13px; color: #717974; line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 18px;
+}
+
+/* countdown */
+.ev-cd {
+  background: linear-gradient(135deg, rgba(0,38,27,.04), rgba(65,105,0,.05));
+  border: 1px solid rgba(0,38,27,.07);
+  border-radius: 16px; padding: 14px; margin-bottom: 18px;
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; text-align: center;
+}
+.ev-cd-unit { display: flex; flex-direction: column; align-items: center; }
+.ev-cd-num {
+  font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 900;
+  color: #00261b; background: #fff; border-radius: 10px;
+  padding: 4px 6px; min-width: 42px; display: block;
+  box-shadow: 0 2px 8px rgba(0,38,27,.09); line-height: 1.25;
+}
+.ev-cd-lbl  { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #717974; margin-top: 4px; }
+
+/* actions */
+.ev-card__actions { display: flex; gap: 9px; }
+.ev-btn {
+  flex: 1; padding: 11px 14px; border-radius: 14px;
+  font-size: 13px; font-weight: 700; text-align: center;
+  text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px;
+  transition: all .2s;
+}
+.ev-btn--primary { color: #fff; box-shadow: 0 3px 12px rgba(0,38,27,.22); }
+.ev-btn--primary:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.ev-btn--ghost   { background: rgba(0,38,27,.05); color: #00261b; border: 1.5px solid rgba(0,38,27,.1); }
+.ev-btn--ghost:hover   { background: rgba(0,38,27,.1); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PAST EVENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-past         { border-top: 2px solid rgba(0,38,27,.07); padding-top: 52px; margin-top: 12px; }
+.ev-past-grid    { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   EMPTY STATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ev-empty {
+  text-align: center; padding: 80px 24px;
+  background: linear-gradient(135deg, rgba(0,38,27,.03), rgba(65,105,0,.06));
+  border-radius: 24px; border: 2px dashed rgba(0,38,27,.1);
+}
+.ev-empty__ico   { font-size: 80px; color: rgba(0,38,27,.14); display: block; margin-bottom: 16px; }
+.ev-empty__title { font-family: 'Montserrat', sans-serif; font-size: 24px; font-weight: 800; color: #00261b; margin-bottom: 8px; }
+.ev-empty__sub   { color: #717974; font-size: 15px; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PULSING DOTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+@keyframes pdot { 0%{box-shadow:0 0 0 0 rgba(159,247,0,.7)} 70%{box-shadow:0 0 0 8px rgba(159,247,0,0)} 100%{box-shadow:0 0 0 0 rgba(159,247,0,0)} }
+.pdot { display:inline-block;width:8px;height:8px;border-radius:50%;background:#9ff700;animation:pdot 1.6s infinite; }
+@keyframes rdot { 0%{box-shadow:0 0 0 0 rgba(198,40,40,.7)} 70%{box-shadow:0 0 0 8px rgba(198,40,40,0)} 100%{box-shadow:0 0 0 0 rgba(198,40,40,0)} }
+.rdot { display:inline-block;width:8px;height:8px;border-radius:50%;background:#c62828;animation:rdot 1.2s infinite; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="ev-hero">
+  <div class="ev-hero__dots"></div>
+  <div class="ev-hero__glow" style="width:560px;height:560px;top:-200px;left:-160px;background:radial-gradient(circle,rgba(159,247,0,.13),transparent 70%);animation-duration:15s"></div>
+  <div class="ev-hero__glow" style="width:320px;height:320px;bottom:-60px;right:8%;background:radial-gradient(circle,rgba(65,105,0,.28),transparent 70%);animation-duration:10s;animation-delay:-5s"></div>
+  <div class="ev-hero__glow" style="width:180px;height:180px;top:30%;right:25%;background:radial-gradient(circle,rgba(159,247,0,.2),transparent 70%);animation-duration:7s;animation-delay:-2s"></div>
+
+  <div class="ev-hero__inner">
+    <div class="ev-eyebrow">
+      <span class="material-symbols-outlined" style="font-size:15px">communities</span>
+      Communauté SafePlace
+    </div>
+    <h1 class="ev-hero__title">
+      Nos<br><span class="accent">Événements</span>
+    </h1>
+    <p class="ev-hero__sub">
+      Dons, cérémonies, conférences et moments de prière —
+      rejoignez la communauté SafePlace lors de nos rassemblements.
+    </p>
+    <div class="ev-stats">
+      <div class="ev-stat">
+        <div class="ev-stat__n">{{ upcoming_count }}</div>
+        <div class="ev-stat__l">À venir</div>
+      </div>
+      <div class="ev-stat">
+        <div class="ev-stat__n">{{ total_count }}</div>
+        <div class="ev-stat__l">Au total</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ FILTER BAR ═══════════════════ -->
+<div class="ev-bar">
+  <div class="ev-bar__inner">
+    <a href="{% url 'evenements' %}"
+       class="ev-pill {% if not filter_type %}{% else %}ev-pill--off{% endif %}"
+       style="{% if not filter_type %}background:#00261b;color:#fff;border-color:#00261b{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:15px">apps</span> Tous
+    </a>
+    <a href="?type=don"
+       class="ev-pill {% if filter_type != 'don' %}ev-pill--off{% endif %}"
+       style="{% if filter_type == 'don' %}background:#416900;color:#fff;border-color:#416900{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:15px">volunteer_activism</span> Dons
+    </a>
+    <a href="?type=ceremonie"
+       class="ev-pill {% if filter_type != 'ceremonie' %}ev-pill--off{% endif %}"
+       style="{% if filter_type == 'ceremonie' %}background:#7B5E00;color:#fff;border-color:#7B5E00{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:15px">celebration</span> Cérémonies
+    </a>
+    <a href="?type=conference"
+       class="ev-pill {% if filter_type != 'conference' %}ev-pill--off{% endif %}"
+       style="{% if filter_type == 'conference' %}background:#0A3D6B;color:#fff;border-color:#0A3D6B{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:15px">record_voice_over</span> Conférences
+    </a>
+    <a href="?type=priere"
+       class="ev-pill {% if filter_type != 'priere' %}ev-pill--off{% endif %}"
+       style="{% if filter_type == 'priere' %}background:#4A0072;color:#fff;border-color:#4A0072{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:15px">self_improvement</span> Prières
+    </a>
+    <a href="?type=culte"
+       class="ev-pill {% if filter_type != 'culte' %}ev-pill--off{% endif %}"
+       style="{% if filter_type == 'culte' %}background:#7F0000;color:#fff;border-color:#7F0000{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:15px">church</span> Cultes
+    </a>
+    <a href="?type=autre"
+       class="ev-pill {% if filter_type != 'autre' %}ev-pill--off{% endif %}"
+       style="{% if filter_type == 'autre' %}background:#00261b;color:#fff;border-color:#00261b{% endif %}">
+      <span class="material-symbols-outlined" style="font-size:15px">more_horiz</span> Autres
+    </a>
+  </div>
+</div>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<div class="ev-main">
+
+  <!-- ─── FEATURED ─── -->
+  {% if featured %}
+  <div class="ev-feat" id="ev-featured">
+    {% if featured.image %}
+    <img src="{{ featured.image.url }}" alt="{{ featured.title }}" class="ev-feat__bg">
+    {% else %}
+    <div class="ev-feat__bg" style="background:{{ featured.gradient }}"></div>
+    {% endif %}
+    <div class="ev-feat__veil"></div>
+
+    <div class="ev-feat__pin">
+      <span class="pdot"></span>
+      Événement à la une
+    </div>
+
+    <div class="ev-feat__body">
+      <div class="ev-feat__typetag">{{ featured.get_event_type_display }}</div>
+      <h2 class="ev-feat__title">{{ featured.title }}</h2>
+      <div class="ev-feat__metas">
+        <span class="ev-feat__meta">
+          <span class="material-symbols-outlined" style="font-size:16px">calendar_today</span>
+          {{ featured.event_date|date:"d F Y à H\hi" }}
+        </span>
+        {% if featured.location %}
+        <span class="ev-feat__meta">
+          <span class="material-symbols-outlined" style="font-size:16px">location_on</span>
+          {{ featured.location }}
+        </span>
+        {% endif %}
+        {% if featured.is_online %}
+        <span class="ev-feat__meta">
+          <span class="material-symbols-outlined" style="font-size:16px">videocam</span>
+          En ligne
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ─── UPCOMING ─── -->
+  {% if upcoming_events %}
+  <h2 class="ev-sec-head">
+    <span class="material-symbols-outlined" style="color:#416900;font-size:22px">upcoming</span>
+    Prochains événements
+  </h2>
+
+  <div class="ev-grid" id="ev-upcoming">
+    {% for ev in upcoming_events %}
+    <div class="ev-card" data-type="{{ ev.event_type }}" data-date="{{ ev.event_date|date:'c' }}">
+
+      <!-- header -->
+      <div class="ev-card__hdr">
+        <span class="material-symbols-outlined ev-card__hdr-bg-icon">{{ ev.type_icon }}</span>
+        <span class="material-symbols-outlined ev-card__hdr-main-icon" style="font-variation-settings:'FILL' 1">{{ ev.type_icon }}</span>
+
+        <!-- date stamp -->
+        <div class="ev-card__stamp" style="color:{{ ev.type_color }}">
+          <div class="ev-card__stamp-day">{{ ev.event_date|date:"d" }}</div>
+          <div class="ev-card__stamp-month" style="color:{{ ev.type_color }}">{{ ev.event_date|date:"M" }}</div>
+        </div>
+
+        <!-- status -->
+        {% if ev.status == 'today' %}
+        <div class="ev-card__stag ev-card__stag--today"><span class="rdot"></span> En cours</div>
+        {% else %}
+        <div class="ev-card__stag ev-card__stag--upcoming"><span class="pdot"></span> À venir</div>
+        {% endif %}
+      </div>
+
+      <!-- body -->
+      <div class="ev-card__body">
+        <div class="ev-card__chip">
+          <span class="material-symbols-outlined" style="font-size:13px">{{ ev.type_icon }}</span>
+          {{ ev.get_event_type_display }}
+        </div>
+
+        <h3 class="ev-card__title">{{ ev.title }}</h3>
+
+        <div class="ev-card__metas">
+          <div class="ev-card__meta">
+            <span class="material-symbols-outlined" style="font-size:15px;color:#416900">schedule</span>
+            {{ ev.event_date|date:"d F Y à H\hi" }}
+          </div>
+          {% if ev.location %}
+          <div class="ev-card__meta">
+            <span class="material-symbols-outlined" style="font-size:15px;color:#416900">location_on</span>
+            {{ ev.location }}
+          </div>
+          {% endif %}
+          {% if ev.is_online %}
+          <div class="ev-card__meta">
+            <span class="material-symbols-outlined" style="font-size:15px;color:#416900">videocam</span>
+            Accessible en ligne
+          </div>
+          {% endif %}
+        </div>
+
+        {% if ev.description %}
+        <p class="ev-card__desc">{{ ev.description }}</p>
+        {% endif %}
+
+        <!-- countdown only for truly upcoming, not today -->
+        {% if ev.status == 'upcoming' %}
+        <div class="ev-cd" data-countdown="{{ ev.event_date|date:'c' }}">
+          <div class="ev-cd-unit"><span class="ev-cd-num" data-part="d">--</span><span class="ev-cd-lbl">Jours</span></div>
+          <div class="ev-cd-unit"><span class="ev-cd-num" data-part="h">--</span><span class="ev-cd-lbl">Heures</span></div>
+          <div class="ev-cd-unit"><span class="ev-cd-num" data-part="m">--</span><span class="ev-cd-lbl">Min</span></div>
+          <div class="ev-cd-unit"><span class="ev-cd-num" data-part="s">--</span><span class="ev-cd-lbl">Sec</span></div>
+        </div>
+        {% endif %}
+
+        <div class="ev-card__actions">
+          {% if ev.registration_url %}
+          <a href="{{ ev.registration_url }}" target="_blank" rel="noopener" class="ev-btn ev-btn--primary">
+            <span class="material-symbols-outlined" style="font-size:16px">how_to_reg</span>
+            S'inscrire
+          </a>
+          {% elif ev.is_online and ev.online_url %}
+          <a href="{{ ev.online_url }}" target="_blank" rel="noopener" class="ev-btn ev-btn--primary">
+            <span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>
+            Rejoindre
+          </a>
+          {% else %}
+          <span class="ev-btn ev-btn--primary" style="cursor:default;opacity:.7">
+            <span class="material-symbols-outlined" style="font-size:16px">event_available</span>
+            Prévu
+          </span>
+          {% endif %}
+          <button class="ev-btn ev-btn--ghost" onclick="shareEvent('{{ ev.title|escapejs }}','{{ ev.event_date|date:"d F Y" }}')" title="Partager">
+            <span class="material-symbols-outlined" style="font-size:16px">share</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+    {% if filter_type %}
+    <div class="ev-empty">
+      <span class="material-symbols-outlined ev-empty__ico">filter_alt_off</span>
+      <h3 class="ev-empty__title">Aucun événement dans cette catégorie</h3>
+      <p class="ev-empty__sub"><a href="{% url 'evenements' %}" style="color:#416900;font-weight:700;text-decoration:underline">← Voir tous les événements</a></p>
+    </div>
+    {% else %}
+    <div class="ev-empty">
+      <span class="material-symbols-outlined ev-empty__ico">event_busy</span>
+      <h3 class="ev-empty__title">Pas encore d'événements à venir</h3>
+      <p class="ev-empty__sub">Revenez bientôt — des événements sont en cours de planification.</p>
+    </div>
+    {% endif %}
+  {% endif %}
+
+  <!-- ─── PAST EVENTS ─── -->
+  {% if past_events %}
+  <div class="ev-past">
+    <h2 class="ev-sec-head">
+      <span class="material-symbols-outlined" style="color:#717974;font-size:22px">history</span>
+      Événements passés
+    </h2>
+    <div class="ev-past-grid" id="ev-past">
+      {% for ev in past_events %}
+      <div class="ev-card ev-card--past" data-type="{{ ev.event_type }}">
+        <div class="ev-card__hdr">
+          <span class="material-symbols-outlined ev-card__hdr-bg-icon">{{ ev.type_icon }}</span>
+          <span class="material-symbols-outlined ev-card__hdr-main-icon" style="font-variation-settings:'FILL' 1">{{ ev.type_icon }}</span>
+          <div class="ev-card__stamp" style="color:#717974">
+            <div class="ev-card__stamp-day">{{ ev.event_date|date:"d" }}</div>
+            <div class="ev-card__stamp-month" style="color:#717974">{{ ev.event_date|date:"M y" }}</div>
+          </div>
+          <div class="ev-card__stag ev-card__stag--past">
+            <span class="material-symbols-outlined" style="font-size:12px">history</span> Passé
+          </div>
+        </div>
+        <div class="ev-card__body">
+          <div class="ev-card__chip">
+            <span class="material-symbols-outlined" style="font-size:13px">{{ ev.type_icon }}</span>
+            {{ ev.get_event_type_display }}
+          </div>
+          <h3 class="ev-card__title">{{ ev.title }}</h3>
+          {% if ev.location %}
+          <div class="ev-card__metas">
+            <div class="ev-card__meta">
+              <span class="material-symbols-outlined" style="font-size:15px;color:#717974">location_on</span>
+              {{ ev.location }}
+            </div>
+          </div>
+          {% endif %}
+          {% if ev.description %}
+          <p class="ev-card__desc">{{ ev.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div><!-- /ev-main -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── type → visual config ── */
+const EV = {
+  don:        { gradient:'linear-gradient(135deg,#416900,#9ff700)',   color:'#416900' },
+  ceremonie:  { gradient:'linear-gradient(135deg,#7B5E00,#F0B429)',   color:'#7B5E00' },
+  conference: { gradient:'linear-gradient(135deg,#0A3D6B,#1A7FC1)',   color:'#0A3D6B' },
+  priere:     { gradient:'linear-gradient(135deg,#4A0072,#9C27B0)',   color:'#4A0072' },
+  culte:      { gradient:'linear-gradient(135deg,#7F0000,#D32F2F)',   color:'#7F0000' },
+  autre:      { gradient:'linear-gradient(135deg,#00261b,#396756)',   color:'#00261b' },
+};
+
+/* Apply gradient + chip colors ── */
+document.querySelectorAll('.ev-card[data-type]').forEach(card => {
+  const cfg = EV[card.dataset.type] || EV.autre;
+  const hdr  = card.querySelector('.ev-card__hdr');
+  const chip = card.querySelector('.ev-card__chip');
+  const btn  = card.querySelector('.ev-btn--primary');
+  if (hdr)  hdr.style.background  = cfg.gradient;
+  if (chip) { chip.style.background = cfg.color + '18'; chip.style.color = cfg.color; }
+  if (btn)  btn.style.background   = cfg.gradient;
+});
+
+/* ── Countdown timers ── */
+function startCountdowns() {
+  document.querySelectorAll('[data-countdown]').forEach(el => {
+    const target = new Date(el.dataset.countdown);
+
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        el.innerHTML = '<div style="text-align:center;padding:8px 0;color:#416900;font-weight:800;font-size:13px">C\'est maintenant !</div>';
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000)  / 60000);
+      const s = Math.floor((diff % 60000)    / 1000);
+
+      const pad = n => String(n).padStart(2,'0');
+      el.querySelectorAll('[data-part]').forEach(span => {
+        if (span.dataset.part === 'd') span.textContent = pad(d);
+        if (span.dataset.part === 'h') span.textContent = pad(h);
+        if (span.dataset.part === 'm') span.textContent = pad(m);
+        if (span.dataset.part === 's') span.textContent = pad(s);
+      });
+    }
+    tick();
+    setInterval(tick, 1000);
+  });
+}
+startCountdowns();
+
+/* ── Share button ── */
+function shareEvent(title, date) {
+  const text = `${title} — ${date} · The SafePlace by K`;
+  if (navigator.share) {
+    navigator.share({ title, text, url: window.location.href }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text + '\n' + window.location.href)
+      .then(() => alert('Lien copié dans le presse-papier !'))
+      .catch(() => alert(text));
+  }
+}
+</script>
+{% endblock %}

@@ -237,6 +237,7 @@ tailwind.config = {
         <a href="{% url 'live' %}" class="{% if request.resolver_match.url_name == 'live' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Live</a>
         <a href="{% url 'podcasts' %}" class="{% if request.resolver_match.url_name == 'podcasts' or request.resolver_match.url_name == 'podcast_detail' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Podcasts</a>
         <a href="{% url 'videos' %}" class="{% if request.resolver_match.url_name == 'videos' or request.resolver_match.url_name == 'video_detail' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Vidéos</a>
+        <a href="{% url 'evenements' %}" class="{% if request.resolver_match.url_name == 'evenements' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Événements</a>
         <a href="{% url 'contact' %}" class="{% if request.resolver_match.url_name == 'contact' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Contact</a>
         <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">À Propos</a>
       </div>
@@ -287,6 +288,9 @@ tailwind.config = {
     </a>
     <a href="{% url 'videos' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'videos' or request.resolver_match.url_name == 'video_detail' %}sp-nav__mobile-link--active{% endif %}">
       <span class="material-symbols-outlined">smart_display</span>Vidéos
+    </a>
+    <a href="{% url 'evenements' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'evenements' %}sp-nav__mobile-link--active{% endif %}">
+      <span class="material-symbols-outlined">event</span>Événements
     </a>
     <a href="{% url 'about' %}" class="sp-nav__mobile-link {% if request.resolver_match.url_name == 'about' %}sp-nav__mobile-link--active{% endif %}">
       <span class="material-symbols-outlined">church</span>À Propos

@@ -19,6 +19,7 @@ urlpatterns = [
     path('access-denied/', views.access_denied, name='access_denied'),
     path('loading/', views.loading, name='loading'),
     path('studio/', views.studio_live, name='studio_live'),
+    path('evenements/', views.evenements, name='evenements'),
 ]
 
 

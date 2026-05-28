@@ -8,6 +8,7 @@ from .subscription import Subscription
 from .contact_message import ContactMessage
 from .comment import Comment
 from .multistream import MultiStreamConfig
+from .event import Event
 
 __all__ = [
     'Category',
@@ -17,4 +18,5 @@ __all__ = [
     'ContactMessage',
     'Comment',
     'MultiStreamConfig',
+    'Event',
 ]

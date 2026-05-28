@@ -10,7 +10,7 @@ import logging
 import os
 import json
 
-from .models import Episode, LiveStream, Category, Subscription, ContactMessage, Comment
+from .models import Episode, LiveStream, Category, Subscription, ContactMessage, Comment, Event
 from .auth import owner_required, subscriber_required
 
 
@@ -427,4 +427,47 @@ def add_comment(request, pk):
             'created_at': comment.created_at.strftime('%d %B %Y'),
         }
     }, status=201)
+
+
+def evenements(request):
+    from django.utils import timezone
+    filter_type = request.GET.get('type', '').strip()
+    valid_types = [t[0] for t in Event.TYPE_CHOICES]
+    if filter_type not in valid_types:
+        filter_type = ''
+
+    try:
+        now = timezone.now()
+        qs = Event.objects.filter(is_published=True)
+        if filter_type:
+            qs = qs.filter(event_type=filter_type)
+
+        upcoming_events = list(qs.filter(event_date__gte=now).order_by('event_date'))
+        past_events     = list(qs.filter(event_date__lt=now).order_by('-event_date')[:12])
+
+        all_qs         = Event.objects.filter(is_published=True)
+        upcoming_count = all_qs.filter(event_date__gte=now).count()
+        total_count    = all_qs.count()
+
+        featured = all_qs.filter(is_featured=True, event_date__gte=now).first()
+        if not featured and upcoming_events:
+            featured = upcoming_events[0]
+
+    except (OperationalError, ProgrammingError) as e:
+        logger.error('evenements: DB error: %s', e)
+        upcoming_events = []
+        past_events     = []
+        featured        = None
+        upcoming_count  = 0
+        total_count     = 0
+
+    context = {
+        'upcoming_events': upcoming_events,
+        'past_events':     past_events,
+        'featured':        featured,
+        'upcoming_count':  upcoming_count,
+        'total_count':     total_count,
+        'filter_type':     filter_type,
+    }
+    return render(request, 'evenements.html', context)
 
