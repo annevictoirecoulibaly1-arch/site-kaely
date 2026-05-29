@@ -634,53 +634,74 @@ def subscription_delete(request, pk):
 @permission_classes([IsDashboardOrAdmin])
 @parser_classes([MultiPartParser, FormParser])
 def episode_upload_chunk(request, pk):
-    """Upload par chunks pour les très gros fichiers vidéo"""
+    """Upload par chunks pour les très gros fichiers vidéo."""
     import tempfile
     try:
-        episode = get_object_or_404(Episode, pk=pk)
-        chunk = request.FILES.get('chunk')
-        chunk_index = int(request.data.get('chunk_index', 0))
+        episode    = get_object_or_404(Episode, pk=pk)
+        chunk      = request.FILES.get('chunk')
+        chunk_index  = int(request.data.get('chunk_index', 0))
         total_chunks = int(request.data.get('total_chunks', 1))
-        filename = request.data.get('filename', f'video_{pk}.mp4')
-        upload_id = request.data.get('upload_id', str(pk))
+        filename   = request.data.get('filename', f'video_{pk}.mp4')
+        upload_id  = request.data.get('upload_id', str(pk))
 
         if not chunk:
             return Response({'error': 'Aucun chunk fourni'}, status=400)
 
-        # Utilise /tmp — toujours disponible et inscriptible sur Render/Linux
-        tmp_dir = os.path.join(tempfile.gettempdir(), '_sp_chunks', upload_id)
+        # Écriture du chunk dans /tmp (toujours accessible sur Render/Linux)
+        tmp_dir    = os.path.join(tempfile.gettempdir(), '_sp_chunks', upload_id)
         os.makedirs(tmp_dir, exist_ok=True)
         chunk_path = os.path.join(tmp_dir, f'{chunk_index:06d}')
         with open(chunk_path, 'wb') as f:
-            for data in chunk.chunks():
-                f.write(data)
+            for part in chunk.chunks():
+                f.write(part)
 
-        if chunk_index == total_chunks - 1:
-            year_month = datetime.now().strftime('%Y/%m')
-            safe_name = ''.join(c if c.isalnum() or c in '._-' else '_' for c in filename)
-            dest_path = os.path.join(tempfile.gettempdir(), safe_name)
-            with open(dest_path, 'wb') as outfile:
+        logger.info(f"Chunk {chunk_index+1}/{total_chunks} reçu pour episode {pk} (upload_id={upload_id})")
+
+        # Pas le dernier chunk → on attend la suite
+        if chunk_index < total_chunks - 1:
+            return Response({'success': True, 'done': False,
+                             'received': chunk_index + 1, 'total': total_chunks})
+
+        # ── Dernier chunk : assemblage + envoi à Cloudinary ──────────────────
+        logger.info(f"Assemblage des {total_chunks} chunks pour episode {pk}…")
+        safe_name  = ''.join(c if c.isalnum() or c in '._-' else '_' for c in filename)
+        year_month = datetime.now().strftime('%Y/%m')
+        dest_path  = os.path.join(tempfile.gettempdir(), f'sp_{upload_id}_{safe_name}')
+
+        try:
+            with open(dest_path, 'wb') as out:
                 for i in range(total_chunks):
                     cp = os.path.join(tmp_dir, f'{i:06d}')
-                    with open(cp, 'rb') as infile:
-                        shutil.copyfileobj(infile, outfile)
+                    if not os.path.exists(cp):
+                        raise FileNotFoundError(f'Chunk {i} manquant dans {tmp_dir}')
+                    with open(cp, 'rb') as inp:
+                        shutil.copyfileobj(inp, out)
+
+            assembled_size = os.path.getsize(dest_path)
+            logger.info(f"Assemblage OK : {assembled_size} octets → upload Cloudinary…")
+
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
             from django.core.files import File
             upload_path = f'videos/{year_month}/{safe_name}'
             with open(dest_path, 'rb') as f:
                 episode.video_file.save(upload_path, File(f), save=True)
+
+            url = episode.video_file.url
+            logger.info(f"Upload Cloudinary OK pour episode {pk}: {url}")
+            return Response({'success': True, 'done': True, 'url': url})
+
+        except Exception as upload_err:
+            logger.error(f"Échec assemblage/upload episode {pk}: {upload_err}", exc_info=True)
+            return Response({'error': f'Échec upload final: {upload_err}'}, status=500)
+        finally:
             try:
                 os.remove(dest_path)
             except OSError:
                 pass
 
-            url = episode.video_file.url
-            return Response({'success': True, 'done': True, 'url': url})
-
-        return Response({'success': True, 'done': False, 'received': chunk_index + 1, 'total': total_chunks})
     except Exception as e:
-        logger.error(f"Error in episode_upload_chunk: {str(e)}", exc_info=True)
+        logger.error(f"episode_upload_chunk error (pk={pk}): {e}", exc_info=True)
         return Response({'error': str(e)}, status=500)
 
 
