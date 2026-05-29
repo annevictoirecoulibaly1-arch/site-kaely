@@ -987,6 +987,31 @@ def multistream_status(request):
 
 # ── Events API ────────────────────────────────────────────────────────────────
 
+def _parse_dt(val):
+    """Parse ISO string or datetime-local value to datetime, accept datetime objects too."""
+    if val is None:
+        return None
+    if hasattr(val, 'isoformat'):
+        return val
+    from django.utils.dateparse import parse_datetime
+    from django.utils import timezone as tz
+    parsed = parse_datetime(str(val))
+    if parsed is None:
+        return None
+    if tz.is_naive(parsed):
+        parsed = tz.make_aware(parsed)
+    return parsed
+
+
+def _fmt_dt(val):
+    """Format datetime or string for JSON — never crashes."""
+    if val is None:
+        return None
+    if hasattr(val, 'isoformat'):
+        return val.isoformat()
+    return str(val)
+
+
 def _event_to_dict(e):
     return {
         'id':               e.id,
@@ -994,8 +1019,8 @@ def _event_to_dict(e):
         'description':      e.description,
         'event_type':       e.event_type,
         'event_type_display': e.get_event_type_display(),
-        'event_date':       e.event_date.isoformat(),
-        'end_date':         e.end_date.isoformat() if e.end_date else None,
+        'event_date':       _fmt_dt(e.event_date),
+        'end_date':         _fmt_dt(e.end_date),
         'location':         e.location,
         'is_online':        e.is_online,
         'online_url':       e.online_url,
@@ -1018,14 +1043,17 @@ def events_api(request):
 @permission_classes([IsDashboardOrAdmin])
 def event_create_api(request):
     try:
-        data = request.data
-        end_raw = data.get('end_date') or None
+        data     = request.data
+        ev_date  = _parse_dt(data.get('event_date'))
+        end_date = _parse_dt(data.get('end_date'))
+        if ev_date is None:
+            return Response({'error': 'event_date invalide ou manquant'}, status=400)
         event = Event.objects.create(
             title            = (data.get('title') or '').strip(),
             description      = (data.get('description') or '').strip(),
             event_type       = data.get('event_type', 'autre'),
-            event_date       = data.get('event_date'),
-            end_date         = end_raw if end_raw else None,
+            event_date       = ev_date,
+            end_date         = end_date,
             location         = (data.get('location') or '').strip(),
             is_online        = bool(data.get('is_online', False)),
             online_url       = (data.get('online_url') or '').strip(),
@@ -1046,8 +1074,8 @@ def event_update_api(request, pk):
     if 'title'            in data: event.title            = (data['title'] or '').strip()
     if 'description'      in data: event.description      = (data['description'] or '').strip()
     if 'event_type'       in data: event.event_type       = data['event_type']
-    if 'event_date'       in data: event.event_date       = data['event_date']
-    if 'end_date'         in data: event.end_date         = data['end_date'] or None
+    if 'event_date'       in data: event.event_date       = _parse_dt(data['event_date']) or event.event_date
+    if 'end_date'         in data: event.end_date         = _parse_dt(data['end_date'])
     if 'location'         in data: event.location         = (data['location'] or '').strip()
     if 'is_online'        in data: event.is_online        = bool(data['is_online'])
     if 'online_url'       in data: event.online_url       = (data['online_url'] or '').strip()
