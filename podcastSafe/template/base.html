@@ -228,9 +228,8 @@ tailwind.config = {
 <header class="sticky top-0 z-50 bg-surface/80 backdrop-blur-md shadow-[0px_4px_20px_rgba(11,61,46,0.05)]">
   <nav class="flex justify-between items-center px-4 md:px-margin-desktop py-4 max-w-container-max-width mx-auto w-full">
     <div class="flex items-center gap-8">
-      <a href="{% url 'home' %}" class="flex items-center gap-2 shrink-0">
-        <span class="material-symbols-outlined text-2xl text-primary">church</span>
-        <span class="font-headline-md font-bold text-primary leading-tight text-lg md:text-2xl">The SafePlace <span class="text-secondary">by K</span></span>
+      <a href="{% url 'home' %}" class="flex items-center shrink-0">
+        <img src="{% static 'img/logo-sm.png' %}" alt="The SafePlace by K" class="h-12 w-auto object-contain" style="filter:drop-shadow(0 0 8px rgba(0,38,27,.3))"/>
       </a>
       <div class="hidden md:flex items-center gap-6">
         <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}text-primary border-b-2 border-secondary font-bold pb-1{% else %}text-on-surface-variant font-medium hover:text-secondary{% endif %} transition-colors duration-200 text-body-md">Accueil</a>
@@ -272,7 +271,7 @@ tailwind.config = {
 <div id="sp-mobile-menu" class="sp-nav__mobile">
   <div class="sp-nav__mobile-panel">
     <div class="flex justify-between items-center mb-8">
-      <span class="font-headline-md font-bold text-primary">The SafePlace <span class="text-secondary">by K</span></span>
+      <img src="{% static 'img/logo-sm.png' %}" alt="The SafePlace by K" class="h-10 w-auto object-contain"/>
       <button id="sp-mobile-close" class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
         <span class="material-symbols-outlined text-primary">close</span>
       </button>
