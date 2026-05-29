@@ -630,57 +630,78 @@ def subscription_delete(request, pk):
         return Response({'error': str(e)}, status=500)
 
 
+def _chunks_dir(upload_id: str) -> str:
+    """Dossier partagé entre tous les workers Gunicorn — MEDIA_ROOT est sur le même FS."""
+    from django.conf import settings
+    base = os.path.join(str(settings.MEDIA_ROOT), '_chunks', upload_id)
+    os.makedirs(base, exist_ok=True)
+    return base
+
+
 @api_view(['POST'])
 @permission_classes([IsDashboardOrAdmin])
 @parser_classes([MultiPartParser, FormParser])
 def episode_upload_chunk(request, pk):
-    """Upload par chunks pour les très gros fichiers vidéo."""
-    import tempfile
+    """Upload par chunks — stockage dans MEDIA_ROOT/_chunks (partagé entre workers)."""
     try:
-        episode    = get_object_or_404(Episode, pk=pk)
-        chunk      = request.FILES.get('chunk')
+        episode      = get_object_or_404(Episode, pk=pk)
+        chunk        = request.FILES.get('chunk')
         chunk_index  = int(request.data.get('chunk_index', 0))
         total_chunks = int(request.data.get('total_chunks', 1))
-        filename   = request.data.get('filename', f'video_{pk}.mp4')
-        upload_id  = request.data.get('upload_id', str(pk))
+        filename     = request.data.get('filename', f'video_{pk}.mp4')
+        upload_id    = request.data.get('upload_id', str(pk))
 
         if not chunk:
             return Response({'error': 'Aucun chunk fourni'}, status=400)
 
-        # Écriture du chunk dans /tmp (toujours accessible sur Render/Linux)
-        tmp_dir    = os.path.join(tempfile.gettempdir(), '_sp_chunks', upload_id)
-        os.makedirs(tmp_dir, exist_ok=True)
-        chunk_path = os.path.join(tmp_dir, f'{chunk_index:06d}')
+        # ── Écriture du chunk ─────────────────────────────────────────────────
+        chunk_dir  = _chunks_dir(upload_id)
+        chunk_path = os.path.join(chunk_dir, f'{chunk_index:06d}')
+
         with open(chunk_path, 'wb') as f:
             for part in chunk.chunks():
                 f.write(part)
 
-        logger.info(f"Chunk {chunk_index+1}/{total_chunks} reçu pour episode {pk} (upload_id={upload_id})")
+        written = os.path.getsize(chunk_path)
+        if written == 0:
+            os.remove(chunk_path)
+            return Response({'error': f'Chunk {chunk_index} vide après écriture'}, status=500)
 
-        # Pas le dernier chunk → on attend la suite
+        logger.info(f"[chunk {chunk_index+1}/{total_chunks}] ep={pk} uid={upload_id} "
+                    f"size={written} dir={chunk_dir}")
+
+        # ── Pas le dernier chunk ──────────────────────────────────────────────
         if chunk_index < total_chunks - 1:
             return Response({'success': True, 'done': False,
                              'received': chunk_index + 1, 'total': total_chunks})
 
-        # ── Dernier chunk : assemblage + envoi à Cloudinary ──────────────────
-        logger.info(f"Assemblage des {total_chunks} chunks pour episode {pk}…")
+        # ── Dernier chunk : vérification, assemblage, Cloudinary ─────────────
+        missing = [i for i in range(total_chunks)
+                   if not os.path.exists(os.path.join(chunk_dir, f'{i:06d}'))]
+        if missing:
+            logger.error(f"Chunks manquants pour ep={pk} uid={upload_id}: {missing}")
+            return Response({
+                'error': 'chunks_missing',
+                'missing': missing,
+                'chunk_dir': chunk_dir,
+            }, status=422)
+
         safe_name  = ''.join(c if c.isalnum() or c in '._-' else '_' for c in filename)
         year_month = datetime.now().strftime('%Y/%m')
-        dest_path  = os.path.join(tempfile.gettempdir(), f'sp_{upload_id}_{safe_name}')
+        from django.conf import settings as _settings
+        dest_path  = os.path.join(str(_settings.MEDIA_ROOT), f'_tmp_{upload_id}_{safe_name}')
 
+        logger.info(f"Assemblage de {total_chunks} chunks → {dest_path}")
         try:
             with open(dest_path, 'wb') as out:
                 for i in range(total_chunks):
-                    cp = os.path.join(tmp_dir, f'{i:06d}')
-                    if not os.path.exists(cp):
-                        raise FileNotFoundError(f'Chunk {i} manquant dans {tmp_dir}')
-                    with open(cp, 'rb') as inp:
+                    with open(os.path.join(chunk_dir, f'{i:06d}'), 'rb') as inp:
                         shutil.copyfileobj(inp, out)
 
-            assembled_size = os.path.getsize(dest_path)
-            logger.info(f"Assemblage OK : {assembled_size} octets → upload Cloudinary…")
+            shutil.rmtree(chunk_dir, ignore_errors=True)
 
-            shutil.rmtree(tmp_dir, ignore_errors=True)
+            total_size = os.path.getsize(dest_path)
+            logger.info(f"Assemblage OK ({total_size} octets) → upload Cloudinary ep={pk}")
 
             from django.core.files import File
             upload_path = f'videos/{year_month}/{safe_name}'
@@ -688,12 +709,12 @@ def episode_upload_chunk(request, pk):
                 episode.video_file.save(upload_path, File(f), save=True)
 
             url = episode.video_file.url
-            logger.info(f"Upload Cloudinary OK pour episode {pk}: {url}")
+            logger.info(f"Cloudinary upload OK ep={pk}: {url}")
             return Response({'success': True, 'done': True, 'url': url})
 
-        except Exception as upload_err:
-            logger.error(f"Échec assemblage/upload episode {pk}: {upload_err}", exc_info=True)
-            return Response({'error': f'Échec upload final: {upload_err}'}, status=500)
+        except Exception as up_err:
+            logger.error(f"Échec assemblage/Cloudinary ep={pk}: {up_err}", exc_info=True)
+            return Response({'error': str(up_err)}, status=500)
         finally:
             try:
                 os.remove(dest_path)
@@ -701,7 +722,7 @@ def episode_upload_chunk(request, pk):
                 pass
 
     except Exception as e:
-        logger.error(f"episode_upload_chunk error (pk={pk}): {e}", exc_info=True)
+        logger.error(f"episode_upload_chunk error pk={pk}: {e}", exc_info=True)
         return Response({'error': str(e)}, status=500)
 
 
