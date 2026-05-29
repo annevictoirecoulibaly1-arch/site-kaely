@@ -18,36 +18,46 @@ import sys
 
 # Chemins supplémentaires où chercher FFmpeg (WinGet sur Windows)
 _FFMPEG_FALLBACK_PATHS = [
-    # Linux / Render / Nix
     '/usr/bin/ffmpeg',
     '/usr/local/bin/ffmpeg',
     '/nix/var/nix/profiles/default/bin/ffmpeg',
     '/root/.nix-profile/bin/ffmpeg',
-    '/home/user/.nix-profile/bin/ffmpeg',
     '/run/current-system/sw/bin/ffmpeg',
-    # Windows local dev
     r'C:\Users\couli\AppData\Local\Microsoft\WinGet\Links\ffmpeg.exe',
     r'C:\Program Files\ffmpeg\bin\ffmpeg.exe',
 ]
 
 def _find_ffmpeg():
-    """Retourne le chemin de ffmpeg ou None — cherche dans PATH puis dans les chemins connus."""
-    # 1. PATH standard
+    """Retourne le chemin de ffmpeg.
+    Priorité : PATH système → static-ffmpeg (pip) → chemins hardcodés → shell."""
+    # 1. PATH de Gunicorn
     found = shutil.which('ffmpeg')
     if found:
         return found
-    # 2. Chemins hardcodés (Nix/Linux/Windows)
+
+    # 2. static-ffmpeg : package pip qui embarque un binaire statique
+    try:
+        import static_ffmpeg
+        static_ffmpeg.add_paths()          # ajoute le binaire au PATH du processus
+        found = shutil.which('ffmpeg')
+        if found:
+            return found
+    except Exception:
+        pass
+
+    # 3. Chemins connus Linux/Nix/Windows
     for p in _FFMPEG_FALLBACK_PATHS:
         if os.path.isfile(p):
             return p
-    # 3. Dernier recours : tester si la commande répond (PATH hérité du shell)
+
+    # 4. Dernier recours : appel direct
     try:
-        import subprocess as _sp
-        r = _sp.run(['ffmpeg', '-version'], capture_output=True, timeout=5)
+        r = subprocess.run(['ffmpeg', '-version'], capture_output=True, timeout=5)
         if r.returncode == 0:
-            return 'ffmpeg'  # disponible dans le PATH du shell parent
+            return 'ffmpeg'
     except Exception:
         pass
+
     return None
 
 from .models import Episode, Category, LiveStream, Subscription, ContactMessage, Comment, MultiStreamConfig, Event
