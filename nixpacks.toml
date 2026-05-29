@@ -5,7 +5,8 @@ nixPkgs = ["ffmpeg", "python311"]
 cmds = [
   "pip install -r requirements.txt",
   "python manage.py collectstatic --noinput",
-  "python manage.py migrate --noinput"
+  "python manage.py migrate --noinput",
+  "ffmpeg -version | head -1 || echo 'ffmpeg not found in PATH at build time'"
 ]
 
 [start]
