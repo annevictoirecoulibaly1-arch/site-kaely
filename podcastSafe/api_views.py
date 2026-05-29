@@ -32,7 +32,7 @@ def _find_ffmpeg():
             return p
     return None
 
-from .models import Episode, Category, LiveStream, Subscription, ContactMessage, Comment, MultiStreamConfig
+from .models import Episode, Category, LiveStream, Subscription, ContactMessage, Comment, MultiStreamConfig, Event
 
 # Registre des processus FFmpeg actifs (en mémoire — single worker)
 _FFMPEG_PROCS = {}  # config_id -> subprocess.Popen
@@ -983,3 +983,84 @@ def multistream_status(request):
         'error': cfg.error_message,
         'ffmpeg_alive': proc is not None and proc.poll() is None,
     })
+
+
+# ── Events API ────────────────────────────────────────────────────────────────
+
+def _event_to_dict(e):
+    return {
+        'id':               e.id,
+        'title':            e.title,
+        'description':      e.description,
+        'event_type':       e.event_type,
+        'event_type_display': e.get_event_type_display(),
+        'event_date':       e.event_date.isoformat(),
+        'end_date':         e.end_date.isoformat() if e.end_date else None,
+        'location':         e.location,
+        'is_online':        e.is_online,
+        'online_url':       e.online_url,
+        'registration_url': e.registration_url,
+        'is_published':     e.is_published,
+        'is_featured':      e.is_featured,
+        'status':           e.status,
+        'image_url':        e.image.url if e.image else None,
+    }
+
+
+@api_view(['GET'])
+@permission_classes([IsDashboardOrAdmin])
+def events_api(request):
+    events = Event.objects.all().order_by('event_date')
+    return Response({'events': [_event_to_dict(e) for e in events], 'total': events.count()})
+
+
+@api_view(['POST'])
+@permission_classes([IsDashboardOrAdmin])
+def event_create_api(request):
+    try:
+        data = request.data
+        end_raw = data.get('end_date') or None
+        event = Event.objects.create(
+            title            = (data.get('title') or '').strip(),
+            description      = (data.get('description') or '').strip(),
+            event_type       = data.get('event_type', 'autre'),
+            event_date       = data.get('event_date'),
+            end_date         = end_raw if end_raw else None,
+            location         = (data.get('location') or '').strip(),
+            is_online        = bool(data.get('is_online', False)),
+            online_url       = (data.get('online_url') or '').strip(),
+            registration_url = (data.get('registration_url') or '').strip(),
+            is_published     = bool(data.get('is_published', True)),
+            is_featured      = bool(data.get('is_featured', False)),
+        )
+        return Response({'success': True, 'id': event.id, 'event': _event_to_dict(event)}, status=201)
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsDashboardOrAdmin])
+def event_update_api(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+    data  = request.data
+    if 'title'            in data: event.title            = (data['title'] or '').strip()
+    if 'description'      in data: event.description      = (data['description'] or '').strip()
+    if 'event_type'       in data: event.event_type       = data['event_type']
+    if 'event_date'       in data: event.event_date       = data['event_date']
+    if 'end_date'         in data: event.end_date         = data['end_date'] or None
+    if 'location'         in data: event.location         = (data['location'] or '').strip()
+    if 'is_online'        in data: event.is_online        = bool(data['is_online'])
+    if 'online_url'       in data: event.online_url       = (data['online_url'] or '').strip()
+    if 'registration_url' in data: event.registration_url = (data['registration_url'] or '').strip()
+    if 'is_published'     in data: event.is_published     = bool(data['is_published'])
+    if 'is_featured'      in data: event.is_featured      = bool(data['is_featured'])
+    event.save()
+    return Response({'success': True, 'event': _event_to_dict(event)})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsDashboardOrAdmin])
+def event_delete_api(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+    event.delete()
+    return Response({'success': True})

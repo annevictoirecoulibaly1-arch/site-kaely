@@ -45,6 +45,12 @@ urlpatterns = [
     path('comments/<int:pk>/approve/', api_views.comment_approve, name='comment_approve'),
     path('comments/<int:pk>/delete/', api_views.comment_delete, name='comment_delete'),
 
+    # Events
+    path('events/', api_views.events_api, name='events_api'),
+    path('events/create/', api_views.event_create_api, name='event_create_api'),
+    path('events/<int:pk>/update/', api_views.event_update_api, name='event_update_api'),
+    path('events/<int:pk>/delete/', api_views.event_delete_api, name='event_delete_api'),
+
     # Multistream
     path('multistream/config/', api_views.multistream_config, name='multistream_config'),
     path('multistream/start/', api_views.multistream_start, name='multistream_start'),
